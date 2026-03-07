@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>SplitIt — Split smarter</title>
+<title>Split/It — Split smarter</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -55,22 +55,17 @@ body::before {
 /* ── HEADER ── */
 header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 28px 0 22px;
+  padding: 22px 0 20px;
   border-bottom: 2px solid var(--ink);
   margin-bottom: 32px;
 }
-.wordmark {
-  font-family: 'Nunito', sans-serif;
-  font-size: 30px; font-weight: 700;
-  letter-spacing: -0.5px;
-  color: var(--ink);
-}
-.wordmark span { color: var(--amber); }
+.wordmark { display: block; line-height: 1; }
+.wordmark svg { display: block; }
 .header-tag {
   font-family: 'Courier Prime', monospace;
   font-size: 10px; color: var(--ink3);
   letter-spacing: 2.5px; text-transform: uppercase;
-  margin-top: 3px;
+  margin-top: 5px;
 }
 
 /* ── TABS ── */
@@ -435,8 +430,14 @@ input::placeholder { color: var(--ink4); }
 <div class="app">
   <header>
     <div>
-      <div class="wordmark">Split<span>It</span></div>
-      <div class="header-tag">Split smarter · Pay faster</div>
+      <div class="wordmark">
+        <svg width="130" height="38" viewBox="0 0 130 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text y="32" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="36" font-weight="400" letter-spacing="-1.5">
+            <tspan fill="#1c1712">Split</tspan><tspan fill="#b8720a" font-weight="300">/</tspan><tspan fill="#b8720a">It</tspan>
+          </text>
+        </svg>
+        <div class="header-tag">Split smarter · Pay faster</div>
+      </div>
     </div>
     <div id="session-badge" style="display:none">
       <span class="tag tag-green">● Session Active</span>
@@ -588,11 +589,21 @@ input::placeholder { color: var(--ink4); }
     <div class="card">
       <div class="card-head"><span class="card-title">🔗 Share with Your Group</span></div>
       <div class="card-body">
+
+        <!-- Session name -->
+        <div style="margin-bottom:18px">
+          <label style="display:block;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Session Name</label>
+          <input type="text" id="session-name-input" maxlength="60"
+            style="width:100%;font-size:15px;font-weight:600;color:var(--ink)"
+            placeholder="e.g. Nobu · 03/07/2026">
+          <div style="font-size:11px;color:var(--ink4);margin-top:5px;font-family:'Courier Prime',monospace" id="session-name-display"></div>
+        </div>
+
         <p style="font-size:14px;color:var(--ink2);margin-bottom:18px">
           Send this link to everyone at the table. They'll open it on their phone and <strong style="color:var(--text)">tap to claim their items</strong> — no app download needed.
         </p>
-        <button class="btn btn-green" onclick="generateLink()" style="width:100%;padding:14px;font-size:15px;margin-bottom:16px">
-          ✨ Generate Shareable Link
+        <button class="btn btn-green" onclick="generateLink()" style="margin-bottom:16px">
+          ✨ Generate Link
         </button>
         <div id="link-area" style="display:none">
           <div class="link-box">
@@ -622,6 +633,7 @@ input::placeholder { color: var(--ink4); }
   <div class="step" id="step4">
     <div class="results-header">
       <div class="results-h">Here's the <span>split</span></div>
+      <div class="results-sub" id="results-session-name" style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--ink3);margin-top:6px"></div>
       <div class="results-sub">Tap Venmo or Zelle to send payment instantly</div>
     </div>
 
@@ -655,9 +667,16 @@ input::placeholder { color: var(--ink4); }
 <div id="claim-view">
 <div class="app">
   <div class="claim-header">
-    <div class="wordmark" style="font-size:36px;text-align:center">Split<span style="-webkit-text-fill-color:var(--green);color:var(--green)">It</span></div>
+    <div class="wordmark" style="text-align:center">
+      <svg width="160" height="48" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block">
+        <text y="42" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="46" font-weight="400" letter-spacing="-2">
+          <tspan fill="#1c1712">Split</tspan><tspan fill="#b8720a" font-weight="300">/</tspan><tspan fill="#b8720a">It</tspan>
+        </text>
+      </svg>
+    </div>
     <div class="claim-title" style="margin-top:12px">Claim your <span>items</span></div>
     <div class="claim-sub" id="claim-host-info">Tap each item you ordered</div>
+    <div id="claim-session-name" style="font-family:'Courier Prime',monospace;font-size:12px;color:var(--ink3);margin-top:6px"></div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
@@ -693,12 +712,16 @@ input::placeholder { color: var(--ink4); }
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
+// ── Worker URL — all API and session calls go through here ──
+const PROXY_URL = 'https://splitit-proxy.zbcimz.workers.dev';
+
 let state = {
   items: [],       // {id, name, price, assignees:[partyId,...]}
   parties: [],     // {id, name, color}
   tax: 9,
   tip: 18,
   sessionId: null,
+  sessionName: null, // human-readable session name
   claims: {},      // {itemId: claimerName}
   meta: null,      // {establishment, address, phone, date, time}
 };
@@ -708,20 +731,117 @@ let selectedImage = null;
 let claimerName = '';
 let claimState = null; // decoded from URL for claim view
 
+// ══════════════════════════════════════════
+// MD5 (lightweight pure-JS)
+// ══════════════════════════════════════════
+function md5(str) {
+  function safeAdd(x,y){const lsw=(x&0xffff)+(y&0xffff);return(((x>>16)+(y>>16)+(lsw>>16))<<16)|(lsw&0xffff)}
+  function bitRotateLeft(num,cnt){return(num<<cnt)|(num>>>(32-cnt))}
+  function md5cmn(q,a,b,x,s,t){return safeAdd(bitRotateLeft(safeAdd(safeAdd(a,q),safeAdd(x,t)),s),b)}
+  function md5ff(a,b,c,d,x,s,t){return md5cmn((b&c)|((~b)&d),a,b,x,s,t)}
+  function md5gg(a,b,c,d,x,s,t){return md5cmn((b&d)|(c&(~d)),a,b,x,s,t)}
+  function md5hh(a,b,c,d,x,s,t){return md5cmn(b^c^d,a,b,x,s,t)}
+  function md5ii(a,b,c,d,x,s,t){return md5cmn(c^(b|(~d)),a,b,x,s,t)}
+  const utf8 = unescape(encodeURIComponent(str));
+  const m = [];
+  for(let i=0;i<utf8.length;i++){m[i>>2]|=utf8.charCodeAt(i)<<((i%4)*8)}
+  m[utf8.length>>2]|=0x80<<((utf8.length%4)*8);
+  m[(((utf8.length+8)>>6)<<4)+14]=utf8.length*8;
+  let a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  for(let i=0;i<m.length;i+=16){
+    const [oa,ob,oc,od]=[a,b,c,d];
+    a=md5ff(a,b,c,d,m[i],7,-680876936);d=md5ff(d,a,b,c,m[i+1],12,-389564586);c=md5ff(c,d,a,b,m[i+2],17,606105819);b=md5ff(b,c,d,a,m[i+3],22,-1044525330);
+    a=md5ff(a,b,c,d,m[i+4],7,-176418897);d=md5ff(d,a,b,c,m[i+5],12,1200080426);c=md5ff(c,d,a,b,m[i+6],17,-1473231341);b=md5ff(b,c,d,a,m[i+7],22,-45705983);
+    a=md5ff(a,b,c,d,m[i+8],7,1770035416);d=md5ff(d,a,b,c,m[i+9],12,-1958414417);c=md5ff(c,d,a,b,m[i+10],17,-42063);b=md5ff(b,c,d,a,m[i+11],22,-1990404162);
+    a=md5ff(a,b,c,d,m[i+12],7,1804603682);d=md5ff(d,a,b,c,m[i+13],12,-40341101);c=md5ff(c,d,a,b,m[i+14],17,-1502002290);b=md5ff(b,c,d,a,m[i+15],22,1236535329);
+    a=md5gg(a,b,c,d,m[i+1],5,-165796510);d=md5gg(d,a,b,c,m[i+6],9,-1069501632);c=md5gg(c,d,a,b,m[i+11],14,643717713);b=md5gg(b,c,d,a,m[i],20,-373897302);
+    a=md5gg(a,b,c,d,m[i+5],5,-701558691);d=md5gg(d,a,b,c,m[i+10],9,38016083);c=md5gg(c,d,a,b,m[i+15],14,-660478335);b=md5gg(b,c,d,a,m[i+4],20,-405537848);
+    a=md5gg(a,b,c,d,m[i+9],5,568446438);d=md5gg(d,a,b,c,m[i+14],9,-1019803690);c=md5gg(c,d,a,b,m[i+3],14,-187363961);b=md5gg(b,c,d,a,m[i+8],20,1163531501);
+    a=md5gg(a,b,c,d,m[i+13],5,-1444681467);d=md5gg(d,a,b,c,m[i+2],9,-51403784);c=md5gg(c,d,a,b,m[i+7],14,1735328473);b=md5gg(b,c,d,a,m[i+12],20,-1926607734);
+    a=md5hh(a,b,c,d,m[i+5],4,-378558);d=md5hh(d,a,b,c,m[i+8],11,-2022574463);c=md5hh(c,d,a,b,m[i+11],16,1839030562);b=md5hh(b,c,d,a,m[i+14],23,-35309556);
+    a=md5hh(a,b,c,d,m[i+1],4,-1530992060);d=md5hh(d,a,b,c,m[i+4],11,1272893353);c=md5hh(c,d,a,b,m[i+7],16,-155497632);b=md5hh(b,c,d,a,m[i+10],23,-1094730640);
+    a=md5hh(a,b,c,d,m[i+13],4,681279174);d=md5hh(d,a,b,c,m[i],11,-358537222);c=md5hh(c,d,a,b,m[i+3],16,-722521979);b=md5hh(b,c,d,a,m[i+6],23,76029189);
+    a=md5hh(a,b,c,d,m[i+9],4,-640364487);d=md5hh(d,a,b,c,m[i+12],11,-421815835);c=md5hh(c,d,a,b,m[i+15],16,530742520);b=md5hh(b,c,d,a,m[i+2],23,-995338651);
+    a=md5ii(a,b,c,d,m[i],6,-198630844);d=md5ii(d,a,b,c,m[i+7],10,1126891415);c=md5ii(c,d,a,b,m[i+14],15,-1416354905);b=md5ii(b,c,d,a,m[i+5],21,-57434055);
+    a=md5ii(a,b,c,d,m[i+12],6,1700485571);d=md5ii(d,a,b,c,m[i+3],10,-1894986606);c=md5ii(c,d,a,b,m[i+10],15,-1051523);b=md5ii(b,c,d,a,m[i+1],21,-2054922799);
+    a=md5ii(a,b,c,d,m[i+8],6,1873313359);d=md5ii(d,a,b,c,m[i+15],10,-30611744);c=md5ii(c,d,a,b,m[i+6],15,-1560198380);b=md5ii(b,c,d,a,m[i+13],21,1309151649);
+    a=md5ii(a,b,c,d,m[i+4],6,-145523070);d=md5ii(d,a,b,c,m[i+11],10,-1120210379);c=md5ii(c,d,a,b,m[i+2],15,718787259);b=md5ii(b,c,d,a,m[i+9],21,-343485551);
+    a=safeAdd(a,oa);b=safeAdd(b,ob);c=safeAdd(c,oc);d=safeAdd(d,od);
+  }
+  return [a,b,c,d].map(n=>('0'+((n<0?n+0x100000000:n).toString(16))).slice(-8)).join('').slice(0,8);
+}
+
+// ══════════════════════════════════════════
+// SESSION NAME
+// ══════════════════════════════════════════
+function generateSessionName(meta) {
+  // If OCR found restaurant name + date, use those
+  if (meta && meta.establishment && meta.date) {
+    const clean = meta.establishment.replace(/[^a-zA-Z0-9 ]/g,'').trim();
+    return `${clean} · ${meta.date}`;
+  }
+  if (meta && meta.establishment) {
+    const clean = meta.establishment.replace(/[^a-zA-Z0-9 ]/g,'').trim();
+    const now = new Date();
+    const d = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+    return `${clean} · ${d}`;
+  }
+  // Default: MD5 of current timestamp → short hash
+  const now = new Date();
+  const stamp = now.toISOString();
+  const hash = md5(stamp);
+  const d = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+  const t = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  return `Split · ${d} ${t} · #${hash}`;
+}
+
+function updateSessionNameDisplay() {
+  const el = document.getElementById('session-name-display');
+  if (el) el.textContent = state.sessionName || '';
+}
+
 const COLORS = ['p0','p1','p2','p3','p4','p5','p6','p7'];
 const C_HEADS = ['ph0','ph1','ph2','ph3','ph4','ph5','ph6','ph7'];
 
 // ══════════════════════════════════════════
 // INIT — check URL for claim link
 // ══════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   const hash = window.location.hash;
   if (hash.startsWith('#claim=')) {
-    try {
-      const encoded = hash.slice(7);
-      claimState = JSON.parse(atob(encoded));
-      showClaimView();
-    } catch(e) { initMain(); }
+    const id = hash.slice(7);
+
+    // Check if it looks like a short ID (not base64 encoded blob)
+    const isShortId = id.length < 100;
+
+    if (isShortId) {
+      // Try to load from KV via Worker
+      try {
+        const res = await fetch(PROXY_URL + '/session?id=' + encodeURIComponent(id));
+        if (res.ok) {
+          claimState = await res.json();
+          showClaimView();
+        } else if (res.status === 404) {
+          initMain();
+          showSessionError();
+        } else {
+          throw new Error('Server error ' + res.status);
+        }
+      } catch(e) {
+        console.error('Failed to load session from KV:', e);
+        initMain();
+        showSessionError();
+      }
+    } else {
+      // Legacy: base64 encoded full session in URL
+      try {
+        claimState = JSON.parse(atob(id));
+        showClaimView();
+      } catch(e) {
+        initMain();
+        showSessionError();
+      }
+    }
   } else if (hash.startsWith('#session=')) {
     try {
       const encoded = hash.slice(9);
@@ -739,9 +859,23 @@ window.addEventListener('DOMContentLoaded', () => {
   if (navigator.share) document.getElementById('native-share').style.display = '';
 });
 
+function showSessionError() {
+  // Show a friendly banner instead of an alert
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:white;padding:14px 20px;text-align:center;font-size:14px;font-weight:600;z-index:9999';
+  banner.textContent = '⚠️ Session not found — it may have expired (24hr limit). Ask the organizer to regenerate the link.';
+  document.body.prepend(banner);
+  setTimeout(() => banner.remove(), 8000);
+}
+
 function initMain() {
   document.getElementById('main-view').style.display = '';
   document.getElementById('claim-view').style.display = 'none';
+  // Generate default session name from timestamp hash
+  if (!state.sessionName) {
+    state.sessionName = generateSessionName(null);
+    updateSessionNameDisplay();
+  }
 }
 
 // ══════════════════════════════════════════
@@ -752,6 +886,12 @@ function goStep(n) {
   document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', i===n));
   currentStep = n;
   if (n === 2) renderAssignList();
+  if (n === 3) {
+    // Pre-fill session name input with current session name
+    const input = document.getElementById('session-name-input');
+    if (input && state.sessionName) input.value = state.sessionName;
+    updateSessionNameDisplay();
+  }
   if (n === 4) recalculate();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -805,10 +945,6 @@ async function runOCR() {
   document.getElementById('ocr-btn').disabled = true;
 
   try {
-    // ── Point this at your Cloudflare Worker URL after deploying ──
-    // e.g. 'https://splitit-proxy.yourname.workers.dev'
-    const PROXY_URL = 'https://splitit-proxy.zbcimz.workers.dev';
-
     const response = await fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -920,6 +1056,9 @@ function renderMeta() {
       <span class="meta-val">${esc(f.val)}</span>
     </div>`
   ).join('');
+  // Upgrade session name now that we have restaurant info
+  state.sessionName = generateSessionName(m);
+  updateSessionNameDisplay();
 }
 
 function renderMetaSummary() {
@@ -1065,9 +1204,33 @@ function setTip(v) { document.getElementById('tip').value = v; }
 // ══════════════════════════════════════════
 // SHARE LINK
 // ══════════════════════════════════════════
-function generateLink() {
-  state.sessionId = 'sess_' + Math.random().toString(36).slice(2,8);
-  // Encode full state including current claims
+function makeSessionId(name) {
+  // Derive a short URL-safe slug from the session name
+  if (name) {
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')  // non-alphanumeric → dash
+      .replace(/^-+|-+$/g, '')       // trim leading/trailing dashes
+      .slice(0, 24);                 // max 24 chars
+    if (slug.length > 3) return slug;
+  }
+  // Fallback: 8-char MD5 of timestamp
+  return md5(new Date().toISOString());
+}
+
+async function generateLink() {
+  const btn = document.querySelector('[onclick="generateLink()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving…'; }
+
+  // Resolve session name from input field
+  const nameInput = document.getElementById('session-name-input');
+  if (nameInput && nameInput.value.trim()) {
+    state.sessionName = nameInput.value.trim();
+  }
+
+  // Build short clean session ID from the name
+  state.sessionId = makeSessionId(state.sessionName);
+
   const payload = {
     items: state.items,
     parties: state.parties,
@@ -1075,13 +1238,37 @@ function generateLink() {
     tip: parseFloat(document.getElementById('tip').value) || 18,
     claims: state.claims,
     sessionId: state.sessionId,
+    sessionName: state.sessionName,
+    meta: state.meta,
   };
-  const encoded = btoa(JSON.stringify(payload));
-  const url = `${location.origin}${location.pathname}#claim=${encoded}`;
+
+  try {
+    const res = await fetch(PROXY_URL + '/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('KV save failed: ' + res.status);
+  } catch(e) {
+    console.warn('KV unavailable, falling back to URL encoding', e);
+    // Fallback: encode full state in URL
+    const encoded = btoa(JSON.stringify(payload));
+    const url = `${location.origin}${location.pathname}#claim=${encoded}`;
+    showLink(url);
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Generate Link'; }
+    return;
+  }
+
+  // Short clean URL: just the session ID
+  const url = `${location.origin}${location.pathname}#claim=${state.sessionId}`;
+  showLink(url);
+  if (btn) { btn.disabled = false; btn.textContent = '✨ Generate Link'; }
+}
+
+function showLink(url) {
   document.getElementById('link-display').textContent = url;
   document.getElementById('link-area').style.display = 'block';
   document.getElementById('session-badge').style.display = '';
-  // Clear old QR
   document.getElementById('qr-area').style.display = 'none';
   document.getElementById('qr-container').innerHTML = '';
 }
@@ -1133,6 +1320,10 @@ function recalculate() {
   const grid = document.getElementById('receipts-grid');
   grid.innerHTML = '';
   renderMetaSummary();
+  // Session name in results header
+  const sn = state.sessionName || '';
+  const snEl = document.getElementById('results-session-name');
+  if (snEl) snEl.textContent = sn;
   // Stats
   const totalItems = state.items.length;
   const splitItems = state.items.filter(i => i.assignees.filter(id => state.parties.find(p=>p.id===id)).length > 1).length;
@@ -1221,6 +1412,8 @@ function showClaimView() {
   if (claimState) {
     const count = claimState.items ? claimState.items.length : 0;
     document.getElementById('claim-host-info').textContent = `${count} items to split · Tap what you ordered`;
+    const snEl = document.getElementById('claim-session-name');
+    if (snEl && claimState.sessionName) snEl.textContent = claimState.sessionName;
   }
 }
 
@@ -1244,11 +1437,22 @@ function renderClaimItems() {
     const isOther = claimedBy && !isMe;
     const div = document.createElement('div');
     div.className = 'claim-item' + (isMe ? ' claimed-me' : isOther ? ' claimed-other' : '');
-    div.onclick = () => {
+    div.onclick = async () => {
       if (isOther) return;
+      if (!claimState.claims) claimState.claims = {};
       if (isMe) { delete claimState.claims[item.id]; }
-      else { if (!claimState.claims) claimState.claims = {}; claimState.claims[item.id] = claimerName; }
+      else { claimState.claims[item.id] = claimerName; }
       renderClaimItems();
+      // Sync claims to KV so all devices stay in sync
+      if (claimState.sessionId) {
+        try {
+          await fetch(PROXY_URL + '/session?id=' + encodeURIComponent(claimState.sessionId), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ claims: claimState.claims }),
+          });
+        } catch(e) { console.warn('Claim sync failed:', e); }
+      }
     };
     if (isMe) myTotal += item.price;
     div.innerHTML = `
