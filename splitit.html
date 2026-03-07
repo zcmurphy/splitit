@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SplitIt — Split smarter</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment: #f7f2e9;
+  --parchment2: #ede6d6;
+  --parchment3: #e4dbc8;
+  --white: #ffffff;
+  --ink: #1c1712;
+  --ink2: #4a3f32;
+  --ink3: #8c7b68;
+  --ink4: #b8a898;
+  --amber: #b8720a;
+  --amber2: #d4891a;
+  --amber-pale: #fdf5e6;
+  --amber-border: rgba(184,114,10,0.25);
+  --red: #a33030;
+  --red-pale: rgba(163,48,48,0.08);
+  --green: #2e6b3e;
+  --rule: rgba(28,23,18,0.1);
+  --rule2: rgba(28,23,18,0.18);
+  --shadow: 0 2px 12px rgba(28,23,18,0.08);
+  --shadow-md: 0 4px 24px rgba(28,23,18,0.12);
+  --venmo: #3d95ce;
+  --zelle: #6c1cd1;
+  --r: 4px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--parchment2);
+  color: var(--ink);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle paper texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+.app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 16px 80px; }
+
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 0 22px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 32px;
+}
+.wordmark {
+  font-family: 'Nunito', sans-serif;
+  font-size: 30px; font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--ink);
+}
+.wordmark span { color: var(--amber); }
+.header-tag {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; color: var(--ink3);
+  letter-spacing: 2.5px; text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex; gap: 0;
+  background: var(--white);
+  border: 1px solid var(--rule2);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.tab {
+  flex: 1; text-align: center;
+  padding: 11px 8px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none;
+  background: transparent; color: var(--ink3);
+  transition: all 0.18s;
+  border-right: 1px solid var(--rule);
+}
+.tab:last-child { border-right: none; }
+.tab.active { background: var(--ink); color: var(--parchment); }
+.tab .tab-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px;
+  background: var(--parchment2); border-radius: 50%;
+  font-size: 10px; margin-right: 5px; color: var(--ink3);
+  font-weight: 700;
+}
+.tab.active .tab-num { background: rgba(255,255,255,0.15); color: var(--parchment); }
+
+/* ── PANELS ── */
+.step { display: none; }
+.step.active { display: block; animation: fadeSlide 0.22s ease; }
+@keyframes fadeSlide { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--rule2);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-head {
+  padding: 12px 20px;
+  background: var(--parchment);
+  border-bottom: 1px solid var(--rule2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--ink2);
+}
+.card-body { padding: 18px 20px; }
+
+/* ── FORMS ── */
+.row { display: flex; gap: 8px; align-items: center; }
+.row + .row { margin-top: 10px; }
+input[type=text], input[type=number], input[type=email] {
+  background: var(--parchment);
+  border: 1px solid var(--rule2);
+  border-radius: var(--r);
+  padding: 9px 13px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; color: var(--ink);
+  flex: 1; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-border); }
+input[type=number] { max-width: 100px; }
+input::placeholder { color: var(--ink4); }
+
+.btn {
+  border: none; border-radius: var(--r);
+  padding: 9px 18px;
+  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn-green { background: var(--ink); color: var(--parchment); }
+.btn-green:hover { background: var(--ink2); }
+.btn-outline { background: transparent; color: var(--ink2); border: 1px solid var(--rule2); }
+.btn-outline:hover { background: var(--parchment); }
+.btn-ghost { background: transparent; color: var(--ink3); border: none; padding: 6px 10px; font-size: 12px; }
+.btn-ghost:hover { color: var(--red); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+/* ── PARTY CHIPS ── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px 5px 12px;
+  border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid; cursor: default;
+}
+.chip .x { background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.4; padding: 0; color: inherit; line-height: 1; }
+.chip .x:hover { opacity: 1; }
+
+/* ── OCR ZONE ── */
+.ocr-zone {
+  border: 2px dashed var(--ink4);
+  border-radius: var(--r);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+  background: var(--parchment);
+}
+.ocr-zone:hover, .ocr-zone.drag-over {
+  border-color: var(--amber);
+  background: var(--amber-pale);
+}
+.ocr-icon { font-size: 36px; margin-bottom: 12px; }
+.ocr-label { font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--ink); }
+.ocr-sub { font-size: 13px; color: var(--ink3); }
+#file-input, #camera-input { display: none; }
+.ocr-preview {
+  max-width: 100%; max-height: 280px;
+  border-radius: 4px; margin-top: 12px;
+  display: none;
+}
+.ocr-actions { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+.ocr-status {
+  margin-top: 12px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px; color: var(--amber);
+  min-height: 20px;
+}
+.scanning-dots::after {
+  content: ''; animation: dots 1.2s infinite;
+}
+@keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
+
+/* ── ITEM LIST ── */
+.item-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.item-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px;
+  background: var(--parchment); border-radius: var(--r);
+  border: 1px solid var(--rule);
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+.item-row-name { flex: 1; font-size: 14px; color: var(--ink2); }
+.item-row-price {
+  font-family: 'Courier Prime', monospace;
+  font-size: 13px; color: var(--amber); min-width: 65px; text-align: right;
+}
+.assign-chips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1.5; }
+.ac {
+  font-size: 11px; padding: 3px 9px; border-radius: 12px;
+  border: 1.5px solid; cursor: pointer; transition: all 0.1s; opacity: 0.3;
+}
+.ac.on { opacity: 1; }
+
+/* ── SETTINGS ── */
+.settings-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+@media(max-width:480px) { .settings-grid { grid-template-columns: 1fr; } }
+.setting label {
+  display: block; font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink3); margin-bottom: 8px;
+}
+.pct-row { display: flex; align-items: center; gap: 8px; }
+.pct-lbl { color: var(--ink2); font-size: 14px; }
+.tip-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.tip-preset { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+/* ── SHARE ── */
+.link-box { display: flex; gap: 8px; align-items: center; }
+.link-display {
+  background: var(--parchment2); border: 1px solid var(--rule2);
+  border-radius: var(--r); padding: 10px 14px;
+  font-family: 'Courier Prime', monospace; font-size: 11px;
+  color: var(--ink3); flex: 1; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; cursor: text;
+}
+.copied-badge {
+  display: none; padding: 4px 10px;
+  background: rgba(46,107,62,0.1); color: var(--green);
+  border-radius: 20px; font-size: 11px; font-weight: 700;
+}
+
+/* ── RESULTS ── */
+.results-header {
+  text-align: center; margin-bottom: 28px; padding-bottom: 20px;
+  border-bottom: 2px solid var(--ink);
+}
+.results-h { font-family: 'Nunito', sans-serif; font-size: 28px; font-weight: 700; color: var(--ink); }
+.results-h span { color: var(--amber); }
+.results-sub { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+
+.receipts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.receipt-card {
+  background: var(--white); border: 1px solid var(--rule2);
+  border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow-md);
+  animation: slideUp 0.3s ease forwards; opacity: 0;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.receipt-head {
+  padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+}
+.receipt-name { font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700; color: var(--white); }
+.receipt-count { font-family: 'Courier Prime', monospace; font-size: 10px; background: rgba(0,0,0,0.18); color: rgba(255,255,255,0.8); padding: 3px 8px; border-radius: 10px; }
+.receipt-items { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; background: var(--white); }
+.r-line {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 5px 0; border-bottom: 1px dashed var(--rule); font-size: 13px; gap: 8px;
+}
+.r-line:last-child { border: none; }
+.r-name { color: var(--ink2); flex: 1; }
+.r-split { font-family: 'Courier Prime', monospace; font-size: 10px; color: var(--ink4); }
+.r-price { font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--ink); }
+.receipt-subs { padding: 6px 16px 8px; background: var(--parchment); border-top: 1px solid var(--rule); }
+.r-sub { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink3); padding: 2px 0; font-family: 'Courier Prime', monospace; }
+.receipt-total {
+  padding: 12px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 2px solid var(--rule2);
+  background: var(--amber-pale);
+}
+.rt-label { font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700; color: var(--ink3); letter-spacing: 1px; text-transform: uppercase; }
+.rt-amount { font-family: 'Courier Prime', monospace; font-size: 22px; color: var(--amber); font-weight: 700; }
+.pay-btns { padding: 10px 16px 14px; display: flex; gap: 8px; background: var(--white); }
+.pay-btn {
+  flex: 1; padding: 9px 10px; border-radius: var(--r);
+  border: none; cursor: pointer; font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 700; transition: all 0.15s; text-decoration: none;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.pay-venmo { background: var(--venmo); color: white; }
+.pay-venmo:hover { filter: brightness(1.1); }
+.pay-zelle { background: var(--zelle); color: white; }
+.pay-zelle:hover { filter: brightness(1.1); }
+
+.grand-bar {
+  margin-top: 24px; padding: 20px 24px;
+  background: var(--ink); border-radius: var(--r);
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: var(--shadow-md);
+}
+.grand-label { font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 600; color: var(--parchment2); }
+.grand-amount { font-family: 'Courier Prime', monospace; font-size: 32px; color: var(--amber2); }
+
+/* ── CLAIM VIEW ── */
+#claim-view { display: none; }
+.claim-header {
+  text-align: center; padding: 48px 20px 32px;
+  border-bottom: 2px solid var(--ink); margin-bottom: 28px;
+}
+.claim-title { font-family: 'Nunito', sans-serif; font-size: 30px; font-weight: 700; color: var(--ink); }
+.claim-title span { color: var(--amber); }
+.claim-sub { font-size: 14px; color: var(--ink3); margin-top: 6px; }
+
+.claim-name-row {
+  background: var(--white); border: 1px solid var(--rule2); border-radius: var(--r);
+  padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow);
+}
+.claim-name-label { font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--ink); }
+.claim-items-grid { display: flex; flex-direction: column; gap: 8px; }
+.claim-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--white); border: 1.5px solid var(--rule2);
+  border-radius: var(--r); padding: 14px 16px; cursor: pointer; transition: all 0.15s;
+  box-shadow: var(--shadow);
+}
+.claim-item:hover { border-color: var(--amber); background: var(--amber-pale); }
+.claim-item.claimed-me { border-color: var(--amber); background: var(--amber-pale); }
+.claim-item.claimed-other { opacity: 0.45; cursor: not-allowed; }
+.ci-left { flex: 1; }
+.ci-name { font-size: 15px; font-weight: 500; color: var(--ink); }
+.ci-claimedby { font-size: 11px; color: var(--ink3); margin-top: 2px; font-family: 'Courier Prime', monospace; }
+.ci-price { font-family: 'Courier Prime', monospace; font-size: 15px; color: var(--amber); }
+.ci-check { font-size: 18px; margin-left: 10px; }
+
+.claim-total-bar {
+  position: sticky; bottom: 16px;
+  background: var(--ink); color: var(--parchment);
+  border-radius: var(--r); padding: 14px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: var(--shadow-md); margin-top: 20px;
+  font-family: 'Nunito', sans-serif; font-weight: 700;
+}
+.ct-label { font-size: 14px; color: var(--parchment2); }
+.ct-amount { font-size: 24px; font-family: 'Courier Prime', monospace; color: var(--amber2); }
+
+/* ── MISC ── */
+.empty { padding: 20px; text-align: center; color: var(--ink4); font-size: 13px; font-style: italic; }
+.err { background: var(--red-pale); border: 1px solid rgba(163,48,48,0.25); color: var(--red); padding: 8px 14px; border-radius: var(--r); font-size: 12px; margin-top: 8px; display: none; }
+.divider { border: none; border-top: 1px solid var(--rule); margin: 14px 0; }
+.tag { font-family: 'Courier Prime', monospace; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+.tag-green { background: rgba(46,107,62,0.1); color: var(--green); border: 1px solid rgba(46,107,62,0.2); }
+.tag-amber { background: var(--amber-pale); color: var(--amber); border: 1px solid var(--amber-border); }
+
+/* Party colors — warm bistro palette */
+.p0{color:#7a5c1e;border-color:#b8870a;background:rgba(184,135,10,.1)}
+.p1{color:#1e5c6e;border-color:#2a8a9e;background:rgba(42,138,158,.1)}
+.p2{color:#6e2a1e;border-color:#a84830;background:rgba(168,72,48,.1)}
+.p3{color:#2a5c2a;border-color:#3a8a3a;background:rgba(58,138,58,.1)}
+.p4{color:#5c1e5c;border-color:#8a3a8a;background:rgba(138,58,138,.1)}
+.p5{color:#5c3a1e;border-color:#8a622a;background:rgba(138,98,42,.1)}
+.p6{color:#1e3a5c;border-color:#2a5a8a;background:rgba(42,90,138,.1)}
+.p7{color:#5c1e2a;border-color:#8a2a3a;background:rgba(138,42,58,.1)}
+
+.ph0{background:#b8870a}.ph1{background:#2a7a8a}.ph2{background:#984030}
+.ph3{background:#3a7a3a}.ph4{background:#7a387a}.ph5{background:#8a5a28}
+.ph6{background:#2a527a}.ph7{background:#7a2838}
+
+/* ── META FIELDS ── */
+.meta-field {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 6px 0; border-bottom: 1px dashed var(--rule);
+  font-size: 13px;
+}
+.meta-field:last-child { border-bottom: none; }
+.meta-icon { font-size: 14px; min-width: 20px; }
+.meta-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--ink4); min-width: 90px;
+}
+.meta-val { color: var(--ink2); font-weight: 500; }
+.meta-sep { color: var(--ink4); }
+
+/* ── STAT TILES ── */
+.stat-tile {
+  background: var(--white); border: 1px solid var(--rule2);
+  border-radius: var(--r); padding: 14px 16px; text-align: center;
+  box-shadow: var(--shadow);
+}
+.stat-num {
+  font-family: 'Courier Prime', monospace;
+  font-size: 20px; font-weight: 700; color: var(--amber);
+  margin-bottom: 4px;
+}
+.stat-lbl {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--ink3);
+}
+@media(max-width:480px) {
+  #results-stats { grid-template-columns: repeat(2,1fr) !important; }
+}
+
+/* Mobile */
+@media(max-width:560px){
+  .tabs .tab { font-size: 11px; padding: 8px 4px; }
+  .receipts-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<!-- ══════════ MAIN APP VIEW ══════════ -->
+<div id="main-view">
+<div class="app">
+  <header>
+    <div>
+      <div class="wordmark">Split<span>It</span></div>
+      <div class="header-tag">Split smarter · Pay faster</div>
+    </div>
+    <div id="session-badge" style="display:none">
+      <span class="tag tag-green">● Session Active</span>
+    </div>
+  </header>
+
+  <!-- STEP TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="goStep(0)" id="tab0"><span class="tab-num">1</span>Receipt</button>
+    <button class="tab" onclick="goStep(1)" id="tab1"><span class="tab-num">2</span>Parties</button>
+    <button class="tab" onclick="goStep(2)" id="tab2"><span class="tab-num">3</span>Assign</button>
+    <button class="tab" onclick="goStep(3)" id="tab3"><span class="tab-num">4</span>Share</button>
+    <button class="tab" onclick="goStep(4)" id="tab4"><span class="tab-num">5</span>Split</button>
+  </div>
+
+  <!-- ── STEP 1: RECEIPT SCAN ── -->
+  <div class="step active" id="step0">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">📷 Scan or Upload Receipt</span>
+        <span class="tag tag-amber">AI-Powered OCR</span>
+      </div>
+      <div class="card-body">
+        <div class="ocr-zone" id="ocr-zone" onclick="document.getElementById('file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="handleDrop(event)">
+          <div class="ocr-icon">🧾</div>
+          <div class="ocr-label">Drop receipt here or tap to upload</div>
+          <div class="ocr-sub">Supports JPEG, PNG, HEIC — or use your camera</div>
+          <img id="ocr-preview" class="ocr-preview" />
+        </div>
+        <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(this)">
+        <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="handleFileSelect(this)">
+        <div class="ocr-actions">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('camera-input').click()">📷 Take Photo</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('file-input').click()">📁 Upload File</button>
+          <button class="btn btn-green btn-sm" id="ocr-btn" onclick="runOCR()" style="display:none">✨ Extract Items with AI</button>
+        </div>
+        <div class="ocr-status" id="ocr-status"></div>
+        <div class="err" id="ocr-err">OCR failed. Please try again or add items manually.</div>
+      </div>
+    </div>
+
+    <!-- Receipt metadata card (shown after OCR) -->
+    <div class="card" id="meta-card" style="display:none">
+      <div class="card-head">
+        <span class="card-title">📋 Receipt Details</span>
+        <span class="tag tag-amber">From Receipt</span>
+      </div>
+      <div class="card-body" style="padding:14px 20px">
+        <div id="meta-fields"></div>
+      </div>
+    </div>
+
+    <!-- Manual item entry -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">✏️ Items</span>
+        <span id="item-count" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3)">0 items</span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <input type="text" id="iname" placeholder="Item name…" maxlength="60" style="flex:2">
+          <input type="number" id="iprice" placeholder="$0.00" min="0" step="0.01">
+          <button class="btn btn-green" onclick="addItem()">+ Add</button>
+        </div>
+        <div class="err" id="item-err">Enter a name and valid price.</div>
+        <div class="item-list" id="item-list">
+          <div class="empty" id="item-empty">No items yet. Scan your receipt or add items manually.</div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:right"><button class="btn btn-green" onclick="goStep(1)">Next: Add Parties →</button></div>
+  </div>
+
+  <!-- ── STEP 2: PARTIES ── -->
+  <div class="step" id="step1">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">👥 Add Parties</span>
+        <span id="party-count" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3)">0 parties</span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <input type="text" id="pname" placeholder="Name or group (e.g. 'The Smiths')…" maxlength="30">
+          <button class="btn btn-green" onclick="addParty()">+ Add</button>
+        </div>
+        <div class="err" id="party-err">Please enter a name.</div>
+        <div class="chips" id="party-chips">
+          <span class="empty" id="party-empty" style="padding:16px 0">No parties yet.</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <button class="btn btn-outline" onclick="goStep(0)">← Back</button>
+      <button class="btn btn-green" onclick="goStep(2)">Next: Assign Items →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: ASSIGN ── -->
+  <div class="step" id="step2">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">🎯 Assign Items to Parties</span>
+        <span class="tag tag-amber">Tap names to toggle</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--ink2);margin-bottom:14px">For each item, tap which parties share it. Shared items split evenly among selected parties.</p>
+        <div class="item-list" id="assign-list"></div>
+      </div>
+    </div>
+    <!-- Tax / Tip -->
+    <div class="card">
+      <div class="card-head"><span class="card-title">⚙️ Tax &amp; Tip</span></div>
+      <div class="card-body">
+        <div class="settings-grid">
+          <div class="setting">
+            <label>Tax Rate</label>
+            <div class="pct-row">
+              <input type="number" id="tax" value="9" min="0" max="30" step="0.1">
+              <span class="pct-lbl">%</span>
+            </div>
+          </div>
+          <div class="setting">
+            <label>Tip / Gratuity</label>
+            <div class="pct-row">
+              <input type="number" id="tip" value="18" min="0" max="100" step="1">
+              <span class="pct-lbl">%</span>
+            </div>
+            <div class="tip-presets">
+              <button class="btn btn-outline tip-preset" onclick="setTip(15)">15%</button>
+              <button class="btn btn-outline tip-preset" onclick="setTip(18)">18%</button>
+              <button class="btn btn-outline tip-preset" onclick="setTip(20)">20%</button>
+              <button class="btn btn-outline tip-preset" onclick="setTip(22)">22%</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <button class="btn btn-outline" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-green" onclick="goStep(3)">Next: Share Link →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: SHARE ── -->
+  <div class="step" id="step3">
+    <div class="card">
+      <div class="card-head"><span class="card-title">🔗 Share with Your Group</span></div>
+      <div class="card-body">
+        <p style="font-size:14px;color:var(--ink2);margin-bottom:18px">
+          Send this link to everyone at the table. They'll open it on their phone and <strong style="color:var(--text)">tap to claim their items</strong> — no app download needed.
+        </p>
+        <button class="btn btn-green" onclick="generateLink()" style="width:100%;padding:14px;font-size:15px;margin-bottom:16px">
+          ✨ Generate Shareable Link
+        </button>
+        <div id="link-area" style="display:none">
+          <div class="link-box">
+            <div class="link-display" id="link-display"></div>
+            <button class="btn btn-outline btn-sm" onclick="copyLink()">Copy</button>
+            <div class="copied-badge" id="copied-badge">Copied!</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="shareNative()" id="native-share" style="display:none">📤 Share</button>
+            <button class="btn btn-outline btn-sm" onclick="openQR()">📱 Show QR Code</button>
+          </div>
+        </div>
+        <!-- QR placeholder -->
+        <div id="qr-area" style="display:none;margin-top:16px;text-align:center">
+          <div id="qr-container" style="display:inline-block;background:white;padding:16px;border-radius:8px"></div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:8px;font-family:'Courier Prime',monospace">Scan with phone camera</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <button class="btn btn-outline" onclick="goStep(2)">← Back</button>
+      <button class="btn btn-green" onclick="goStep(4)">Calculate Split →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 5: RESULTS ── -->
+  <div class="step" id="step4">
+    <div class="results-header">
+      <div class="results-h">Here's the <span>split</span></div>
+      <div class="results-sub">Tap Venmo or Zelle to send payment instantly</div>
+    </div>
+
+    <!-- Establishment banner -->
+    <div id="results-meta-banner" style="display:none;align-items:center;gap:8px;background:var(--parchment);border:1px solid var(--rule2);border-radius:var(--r);padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--ink2);flex-wrap:wrap;">
+      <span style="font-size:16px">🍽️</span>
+      <span id="results-meta-text"></span>
+    </div>
+
+    <!-- Stats strip -->
+    <div id="results-stats" style="display:none;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+      <div class="stat-tile"><div class="stat-num" id="stat-items">—</div><div class="stat-lbl">Items</div></div>
+      <div class="stat-tile"><div class="stat-num" id="stat-split">—</div><div class="stat-lbl">Shared</div></div>
+      <div class="stat-tile"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total w/ T&amp;T</div></div>
+      <div class="stat-tile"><div class="stat-num" id="stat-avg">—</div><div class="stat-lbl">Avg / Item</div></div>
+    </div>
+    <div class="receipts-grid" id="receipts-grid"></div>
+    <div class="grand-bar">
+      <span class="grand-label">Total Bill</span>
+      <span class="grand-amount" id="grand-total">$0.00</span>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn btn-outline" onclick="goStep(3)">← Back</button>
+      <button class="btn btn-green" onclick="recalculate()" style="margin-left:8px">↻ Recalculate</button>
+    </div>
+  </div>
+</div><!-- /app -->
+</div><!-- /main-view -->
+
+<!-- ══════════ CLAIM VIEW ══════════ -->
+<div id="claim-view">
+<div class="app">
+  <div class="claim-header">
+    <div class="wordmark" style="font-size:36px;text-align:center">Split<span style="-webkit-text-fill-color:var(--green);color:var(--green)">It</span></div>
+    <div class="claim-title" style="margin-top:12px">Claim your <span>items</span></div>
+    <div class="claim-sub" id="claim-host-info">Tap each item you ordered</div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-body">
+      <div class="claim-name-label">What's your name?</div>
+      <div class="row">
+        <input type="text" id="claimer-name" placeholder="Your name…" maxlength="30">
+        <button class="btn btn-green" onclick="setClaimer()">Go →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="claim-items-wrap" style="display:none">
+    <div class="card">
+      <div class="card-head"><span class="card-title">🍽️ Tap to claim your items</span></div>
+      <div class="card-body">
+        <div class="claim-items-grid" id="claim-items-list"></div>
+      </div>
+    </div>
+    <div class="claim-total-bar" id="claim-total-bar">
+      <span class="ct-label">My Total (est.)</span>
+      <span class="ct-amount" id="claim-total-amt">$0.00</span>
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn btn-green" style="padding:14px 40px;font-size:16px" onclick="doneClaming()">✓ Done Claiming</button>
+    </div>
+  </div>
+</div>
+</div><!-- /claim-view -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let state = {
+  items: [],       // {id, name, price, assignees:[partyId,...]}
+  parties: [],     // {id, name, color}
+  tax: 9,
+  tip: 18,
+  sessionId: null,
+  claims: {},      // {itemId: claimerName}
+  meta: null,      // {establishment, address, phone, date, time}
+};
+let colorIdx = 0;
+let currentStep = 0;
+let selectedImage = null;
+let claimerName = '';
+let claimState = null; // decoded from URL for claim view
+
+const COLORS = ['p0','p1','p2','p3','p4','p5','p6','p7'];
+const C_HEADS = ['ph0','ph1','ph2','ph3','ph4','ph5','ph6','ph7'];
+
+// ══════════════════════════════════════════
+// INIT — check URL for claim link
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash;
+  if (hash.startsWith('#claim=')) {
+    try {
+      const encoded = hash.slice(7);
+      claimState = JSON.parse(atob(encoded));
+      showClaimView();
+    } catch(e) { initMain(); }
+  } else if (hash.startsWith('#session=')) {
+    try {
+      const encoded = hash.slice(9);
+      const loaded = JSON.parse(atob(encoded));
+      Object.assign(state, loaded);
+      initMain();
+      renderAll();
+      goStep(4);
+      recalculate();
+    } catch(e) { initMain(); }
+  } else {
+    initMain();
+  }
+  // Native share support
+  if (navigator.share) document.getElementById('native-share').style.display = '';
+});
+
+function initMain() {
+  document.getElementById('main-view').style.display = '';
+  document.getElementById('claim-view').style.display = 'none';
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function goStep(n) {
+  document.querySelectorAll('.step').forEach((el,i) => el.classList.toggle('active', i===n));
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', i===n));
+  currentStep = n;
+  if (n === 2) renderAssignList();
+  if (n === 4) recalculate();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════
+// OCR
+// ══════════════════════════════════════════
+function handleFileSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  selectedImage = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const prev = document.getElementById('ocr-preview');
+    prev.src = e.target.result;
+    prev.style.display = 'block';
+    document.getElementById('ocr-btn').style.display = '';
+    document.getElementById('ocr-status').textContent = 'Image ready — click Extract Items to analyze.';
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('ocr-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  selectedImage = file;
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('file-input').files = dt.files;
+  handleFileSelect(document.getElementById('file-input'));
+}
+
+async function runOCR() {
+  if (!selectedImage) return;
+  const status = document.getElementById('ocr-status');
+  const errEl = document.getElementById('ocr-err');
+  errEl.style.display = 'none';
+
+  // Convert image to base64
+  const base64 = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(selectedImage);
+  });
+
+  status.textContent = 'Analyzing receipt';
+  status.className = 'ocr-status scanning-dots';
+  document.getElementById('ocr-btn').disabled = true;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: selectedImage.type || 'image/jpeg', data: base64 }
+            },
+            {
+              type: 'text',
+              text: `You are a receipt OCR assistant. Analyze this restaurant receipt and return a single JSON object — no markdown, no extra text.
+
+Format:
+{
+  "meta": {
+    "establishment": "Restaurant name or null",
+    "address": "Full address on one line or null",
+    "phone": "Phone number or null",
+    "date": "Date as printed e.g. 03/07/2026 or null",
+    "time": "Time as printed e.g. 7:42 PM or null"
+  },
+  "items": [
+    {"name": "Item Name", "price": 12.99}
+  ]
+}
+
+Rules for items:
+- Include all food, drink, and appetizer line items
+- Do NOT include tax, tip, subtotal, total, service charges, or fees
+- price must be a number (no dollar sign)
+- name should be clean and readable
+
+Rules for meta:
+- Use null for any field you cannot find or read
+- Do not guess — only include what is clearly printed on the receipt`
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.map(c => c.text || '').join('') || '';
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      throw new Error('Could not parse response');
+    }
+
+    // Support both {meta, items} shape and bare array (fallback)
+    const itemsArr = Array.isArray(parsed) ? parsed : (parsed.items || []);
+    const meta = (!Array.isArray(parsed) && parsed.meta) ? parsed.meta : null;
+
+    if (!itemsArr.length) throw new Error('No items found');
+
+    itemsArr.forEach(item => {
+      if (item.name && !isNaN(parseFloat(item.price))) {
+        state.items.push({
+          id: Date.now() + Math.random(),
+          name: item.name,
+          price: parseFloat(item.price),
+          assignees: state.parties.map(p => p.id)
+        });
+      }
+    });
+
+    if (meta) {
+      state.meta = meta;
+      renderMeta();
+    }
+
+    status.className = 'ocr-status';
+    status.textContent = `✓ Extracted ${itemsArr.length} items from receipt!`;
+    renderItems();
+  } catch(e) {
+    status.className = 'ocr-status';
+    status.textContent = '';
+    errEl.style.display = 'block';
+    console.error(e);
+  }
+  document.getElementById('ocr-btn').disabled = false;
+}
+
+// ══════════════════════════════════════════
+// META
+// ══════════════════════════════════════════
+function renderMeta() {
+  const m = state.meta;
+  if (!m) { document.getElementById('meta-card').style.display = 'none'; return; }
+  document.getElementById('meta-card').style.display = 'block';
+  const fields = [
+    { icon: '🍽️', label: 'Establishment', val: m.establishment },
+    { icon: '📍', label: 'Address',        val: m.address },
+    { icon: '📞', label: 'Phone',          val: m.phone },
+    { icon: '📅', label: 'Date',           val: m.date },
+    { icon: '🕐', label: 'Time',           val: m.time },
+  ].filter(f => f.val);
+  document.getElementById('meta-fields').innerHTML = fields.map(f =>
+    `<div class="meta-field">
+      <span class="meta-icon">${f.icon}</span>
+      <span class="meta-label">${f.label}</span>
+      <span class="meta-val">${esc(f.val)}</span>
+    </div>`
+  ).join('');
+}
+
+function renderMetaSummary() {
+  const m = state.meta;
+  const el = document.getElementById('results-meta-banner');
+  if (!m || (!m.establishment && !m.date)) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const parts = [];
+  if (m.establishment) parts.push(`<strong>${esc(m.establishment)}</strong>`);
+  if (m.address) parts.push(esc(m.address));
+  if (m.date) parts.push(esc(m.date) + (m.time ? ' · ' + esc(m.time) : ''));
+  if (m.phone) parts.push(esc(m.phone));
+  document.getElementById('results-meta-text').innerHTML = parts.join('<span class="meta-sep"> · </span>');
+}
+
+// ══════════════════════════════════════════
+// ITEMS
+// ══════════════════════════════════════════
+function addItem() {
+  const name = document.getElementById('iname').value.trim();
+  const price = parseFloat(document.getElementById('iprice').value);
+  const err = document.getElementById('item-err');
+  if (!name || isNaN(price) || price < 0) { err.style.display='block'; return; }
+  err.style.display = 'none';
+  state.items.push({
+    id: Date.now() + Math.random(),
+    name, price,
+    assignees: state.parties.map(p => p.id)
+  });
+  document.getElementById('iname').value = '';
+  document.getElementById('iprice').value = '';
+  renderItems();
+}
+
+function removeItem(id) {
+  state.items = state.items.filter(i => i.id !== id);
+  renderItems();
+  renderAssignList();
+}
+
+function renderItems() {
+  const list = document.getElementById('item-list');
+  const empty = document.getElementById('item-empty');
+  document.getElementById('item-count').textContent = state.items.length + ' item' + (state.items.length!==1?'s':'');
+  if (!state.items.length) {
+    list.innerHTML = ''; list.appendChild(empty); return;
+  }
+  list.innerHTML = '';
+  state.items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="item-row-name">${esc(item.name)}</div>
+      <div class="item-row-price">${fmt(item.price)}</div>
+      <button class="btn btn-ghost" onclick="removeItem(${item.id})">✕</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════
+// PARTIES
+// ══════════════════════════════════════════
+function addParty() {
+  const name = document.getElementById('pname').value.trim();
+  const err = document.getElementById('party-err');
+  if (!name) { err.style.display='block'; return; }
+  err.style.display = 'none';
+  const color = COLORS[colorIdx % COLORS.length];
+  colorIdx++;
+  const party = { id: Date.now() + Math.random(), name, color };
+  state.parties.push(party);
+  // add to all existing items
+  state.items.forEach(i => { if (!i.assignees.includes(party.id)) i.assignees.push(party.id); });
+  document.getElementById('pname').value = '';
+  renderParties();
+}
+
+function removeParty(id) {
+  state.parties = state.parties.filter(p => p.id !== id);
+  state.items.forEach(i => { i.assignees = i.assignees.filter(a => a !== id); });
+  renderParties();
+  renderAssignList();
+}
+
+function renderParties() {
+  const chips = document.getElementById('party-chips');
+  const empty = document.getElementById('party-empty');
+  document.getElementById('party-count').textContent = state.parties.length + ' part' + (state.parties.length===1?'y':'ies');
+  if (!state.parties.length) { chips.innerHTML=''; chips.appendChild(empty); return; }
+  chips.innerHTML = '';
+  state.parties.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = `chip ${p.color}`;
+    chip.innerHTML = `${esc(p.name)} <button class="x" onclick="removeParty(${p.id})">×</button>`;
+    chips.appendChild(chip);
+  });
+}
+
+// ══════════════════════════════════════════
+// ASSIGN
+// ══════════════════════════════════════════
+function renderAssignList() {
+  const list = document.getElementById('assign-list');
+  if (!state.items.length) {
+    list.innerHTML = '<div class="empty">No items yet. Go back and add items first.</div>'; return;
+  }
+  list.innerHTML = '';
+  state.items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    const chipsHtml = state.parties.length
+      ? state.parties.map(p => {
+          const on = item.assignees.includes(p.id) ? 'on' : '';
+          return `<span class="ac ${p.color} ${on}" onclick="toggleAssign(${item.id},${p.id})">${esc(p.name)}</span>`;
+        }).join('')
+      : '<span style="font-size:11px;color:var(--text3)">Add parties first</span>';
+    row.innerHTML = `
+      <div class="item-row-name">${esc(item.name)}</div>
+      <div class="item-row-price">${fmt(item.price)}</div>
+      <div class="assign-chips">${chipsHtml}</div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function toggleAssign(itemId, partyId) {
+  const item = state.items.find(i => i.id === itemId);
+  if (!item) return;
+  if (item.assignees.includes(partyId)) {
+    item.assignees = item.assignees.filter(a => a !== partyId);
+  } else {
+    item.assignees.push(partyId);
+  }
+  renderAssignList();
+}
+
+// ══════════════════════════════════════════
+// TAX / TIP
+// ══════════════════════════════════════════
+function setTip(v) { document.getElementById('tip').value = v; }
+
+// ══════════════════════════════════════════
+// SHARE LINK
+// ══════════════════════════════════════════
+function generateLink() {
+  state.sessionId = 'sess_' + Math.random().toString(36).slice(2,8);
+  // Encode full state including current claims
+  const payload = {
+    items: state.items,
+    parties: state.parties,
+    tax: parseFloat(document.getElementById('tax').value) || 9,
+    tip: parseFloat(document.getElementById('tip').value) || 18,
+    claims: state.claims,
+    sessionId: state.sessionId,
+  };
+  const encoded = btoa(JSON.stringify(payload));
+  const url = `${location.origin}${location.pathname}#claim=${encoded}`;
+  document.getElementById('link-display').textContent = url;
+  document.getElementById('link-area').style.display = 'block';
+  document.getElementById('session-badge').style.display = '';
+  // Clear old QR
+  document.getElementById('qr-area').style.display = 'none';
+  document.getElementById('qr-container').innerHTML = '';
+}
+
+function copyLink() {
+  const text = document.getElementById('link-display').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const badge = document.getElementById('copied-badge');
+    badge.style.display = 'inline-block';
+    setTimeout(() => badge.style.display = 'none', 2000);
+  });
+}
+
+function shareNative() {
+  const url = document.getElementById('link-display').textContent;
+  navigator.share({ title: 'SplitIt — Claim your items', url });
+}
+
+function openQR() {
+  const url = document.getElementById('link-display').textContent;
+  if (!url || url.length < 10) { generateLink(); }
+  const qrArea = document.getElementById('qr-area');
+  const container = document.getElementById('qr-container');
+  container.innerHTML = '';
+  qrArea.style.display = 'block';
+  new QRCode(container, { text: url, width: 200, height: 200, colorDark:'#1c1712', colorLight:'#ffffff' });
+  qrArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ══════════════════════════════════════════
+// CALCULATE & RESULTS
+// ══════════════════════════════════════════
+function recalculate() {
+  const tax = parseFloat(document.getElementById('tax').value) || 0;
+  const tip = parseFloat(document.getElementById('tip').value) || 0;
+  if (!state.parties.length || !state.items.length) {
+    document.getElementById('receipts-grid').innerHTML = '<div class="empty">Add parties and items first.</div>';
+    return;
+  }
+  const subs = {};
+  state.parties.forEach(p => subs[p.id] = 0);
+  state.items.forEach(item => {
+    const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
+    if (!assigned.length) return;
+    const share = item.price / assigned.length;
+    assigned.forEach(id => subs[id] = (subs[id]||0) + share);
+  });
+  let grand = 0;
+  const grid = document.getElementById('receipts-grid');
+  grid.innerHTML = '';
+  renderMetaSummary();
+  // Stats
+  const totalItems = state.items.length;
+  const splitItems = state.items.filter(i => i.assignees.filter(id => state.parties.find(p=>p.id===id)).length > 1).length;
+  const totalCost = state.items.reduce((a,b) => a+b.price, 0);
+  const avgCost = totalItems ? totalCost / totalItems : 0;
+  document.getElementById('stat-items').textContent = totalItems;
+  document.getElementById('stat-split').textContent = splitItems;
+  document.getElementById('stat-total').textContent = fmt(totalCost * (1 + tax/100 + tip/100));
+  document.getElementById('stat-avg').textContent = fmt(avgCost);
+  document.getElementById('results-stats').style.display = 'grid';
+  state.parties.forEach((party, idx) => {
+    const sub = subs[party.id] || 0;
+    const taxAmt = sub * tax / 100;
+    const tipAmt = sub * tip / 100;
+    const total = sub + taxAmt + tipAmt;
+    grand += total;
+    const partyItems = state.items.filter(i => i.assignees.includes(party.id));
+    const linesHtml = partyItems.map(item => {
+      const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
+      const share = item.price / assigned.length;
+      return `<div class="r-line">
+        <span class="r-name">${esc(item.name)}</span>
+        ${assigned.length > 1 ? `<span class="r-split">÷${assigned.length}</span>` : ''}
+        <span class="r-price">${fmt(share)}</span>
+      </div>`;
+    }).join('');
+    const card = document.createElement('div');
+    card.className = 'receipt-card';
+    card.style.animationDelay = (idx * 70) + 'ms';
+    // Venmo/Zelle links
+    const amount = total.toFixed(2);
+    const note = encodeURIComponent(`SplitIt bill share`);
+    const venmoUrl = `venmo://paycharge?txn=pay&amount=${amount}&note=${note}`;
+    const venmoFallback = `https://venmo.com/`;
+    const zelleUrl = `https://enroll.zellepay.com/qr-codes`;
+    card.innerHTML = `
+      <div class="receipt-head ${C_HEADS[COLORS.indexOf(party.color)]}">
+        <span class="receipt-name">${esc(party.name)}</span>
+        <span class="receipt-count">${partyItems.length} item${partyItems.length!==1?'s':''}</span>
+      </div>
+      <div class="receipt-items">${linesHtml || '<div class="empty">No items assigned</div>'}</div>
+      <hr class="divider" style="margin:0 16px">
+      <div class="receipt-subs">
+        <div class="r-sub"><span>Subtotal</span><span>${fmt(sub)}</span></div>
+        <div class="r-sub"><span>Tax (${tax}%)</span><span>${fmt(taxAmt)}</span></div>
+        <div class="r-sub"><span>Tip (${tip}%)</span><span>${fmt(tipAmt)}</span></div>
+      </div>
+      <div class="receipt-total">
+        <span class="rt-label">TOTAL DUE</span>
+        <span class="rt-amount" style="color:var(--green)">${fmt(total)}</span>
+      </div>
+      <div class="pay-btns">
+        <a href="${venmoUrl}" class="pay-btn pay-venmo" onclick="handleVenmo(event,'${amount}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 2c.6 2.1.9 4.3.9 6.7 0 6.7-5.7 15.3-10.4 15.3-2.5 0-3.8-2.1-5.4-8.4L3 11.4c1.5-1.2 3.1-2.5 3.1-4.5 0-1.4-.8-2.2-1.8-2.2-1.6 0-3.3 1.9-3.3 5.1 0 1.8.4 3.1.4 3.1L-.3 15C-1.1 12.1-1.5 9.5-1.5 7.2-1.5 3 1.1 1 3.8 1c3.1 0 5 2.5 5 5.4 0 2.6-1.5 4.3-2.5 5.7 1 4 2.1 6.1 3.3 6.1 2.4 0 6.7-8.3 6.7-12.5 0-1.7-.3-3.1-.9-4.2L19.4 2z"/></svg>
+          Venmo
+        </a>
+        <a href="${zelleUrl}" target="_blank" class="pay-btn pay-zelle" onclick="handleZelle(event,'${amount}','${esc(party.name)}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L3 14h9l-1.5 8L21 10h-9z"/></svg>
+          Zelle
+        </a>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  document.getElementById('grand-total').textContent = fmt(grand);
+}
+
+function handleVenmo(e, amount) {
+  // Try deep link; fallback after short delay
+  setTimeout(() => {
+    window.open(`https://venmo.com/`, '_blank');
+  }, 1500);
+}
+
+function handleZelle(e, amount, name) {
+  e.preventDefault();
+  alert(`💜 Zelle\n\nAmount: $${amount}\nFor: ${name}'s share\n\nOpen your bank app and use Zelle to send this amount.\n\nCommon banks: Chase, Bank of America, Wells Fargo, Citi, and most major banks support Zelle directly in their app.`);
+}
+
+// ══════════════════════════════════════════
+// CLAIM VIEW
+// ══════════════════════════════════════════
+function showClaimView() {
+  document.getElementById('main-view').style.display = 'none';
+  document.getElementById('claim-view').style.display = 'block';
+  if (claimState) {
+    const count = claimState.items ? claimState.items.length : 0;
+    document.getElementById('claim-host-info').textContent = `${count} items to split · Tap what you ordered`;
+  }
+}
+
+function setClaimer() {
+  const nameEl = document.getElementById('claimer-name');
+  claimerName = nameEl.value.trim();
+  if (!claimerName) { nameEl.focus(); return; }
+  document.getElementById('claim-items-wrap').style.display = 'block';
+  renderClaimItems();
+  document.getElementById('claim-items-wrap').scrollIntoView({behavior:'smooth'});
+}
+
+function renderClaimItems() {
+  const list = document.getElementById('claim-items-list');
+  list.innerHTML = '';
+  const claims = claimState.claims || {};
+  let myTotal = 0;
+  (claimState.items || []).forEach(item => {
+    const claimedBy = claims[item.id];
+    const isMe = claimedBy === claimerName;
+    const isOther = claimedBy && !isMe;
+    const div = document.createElement('div');
+    div.className = 'claim-item' + (isMe ? ' claimed-me' : isOther ? ' claimed-other' : '');
+    div.onclick = () => {
+      if (isOther) return;
+      if (isMe) { delete claimState.claims[item.id]; }
+      else { if (!claimState.claims) claimState.claims = {}; claimState.claims[item.id] = claimerName; }
+      renderClaimItems();
+    };
+    if (isMe) myTotal += item.price;
+    div.innerHTML = `
+      <div class="ci-left">
+        <div class="ci-name">${esc(item.name)}</div>
+        <div class="ci-claimedby">${isMe ? '✓ Yours' : isOther ? `Claimed by ${esc(claimedBy)}` : 'Unclaimed'}</div>
+      </div>
+      <span class="ci-price">${fmt(item.price)}</span>
+      <span class="ci-check">${isMe ? '✓' : isOther ? '🔒' : '○'}</span>
+    `;
+    list.appendChild(div);
+  });
+  document.getElementById('claim-total-amt').textContent = fmt(myTotal);
+}
+
+function doneClaming() {
+  // Re-encode updated state and redirect back to results
+  const newHash = '#session=' + btoa(JSON.stringify({
+    items: claimState.items,
+    parties: claimState.parties,
+    tax: claimState.tax,
+    tip: claimState.tip,
+    claims: claimState.claims,
+    sessionId: claimState.sessionId,
+  }));
+  // Show summary
+  const myClaims = Object.entries(claimState.claims || {})
+    .filter(([,v]) => v === claimerName)
+    .map(([id]) => claimState.items.find(i => i.id == id))
+    .filter(Boolean);
+  const myTotal = myClaims.reduce((a,b) => a + b.price, 0);
+  const tax = claimState.tax || 9;
+  const tip = claimState.tip || 18;
+  const totalWithTT = myTotal * (1 + tax/100 + tip/100);
+  alert(`✓ Done!\n\n${claimerName}, you claimed ${myClaims.length} item(s).\nSubtotal: ${fmt(myTotal)}\nWith tax & tip: ≈${fmt(totalWithTT)}\n\nYour selections have been saved. Tell the organizer!`);
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function fmt(n) { return '$' + (Math.round(n*100)/100).toFixed(2); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderAll() { renderItems(); renderParties(); renderAssignList(); }
+
+// Enter key shortcuts
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('pname')?.addEventListener('keydown', e => { if (e.key==='Enter') addParty(); });
+  document.getElementById('iname')?.addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('iprice').focus(); });
+  document.getElementById('iprice')?.addEventListener('keydown', e => { if (e.key==='Enter') addItem(); });
+  document.getElementById('claimer-name')?.addEventListener('keydown', e => { if (e.key==='Enter') setClaimer(); });
+});
+</script>
+</body>
+</html>
