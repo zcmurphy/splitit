@@ -1102,7 +1102,8 @@ function addItem() {
   renderItems();
 }
 
-function removeItem(id) {
+function removeItem(btn) {
+  const id = parseFloat(btn.dataset.itemId);
   state.items = state.items.filter(i => i.id !== id);
   renderItems();
   renderAssignList();
@@ -1122,7 +1123,7 @@ function renderItems() {
     row.innerHTML = `
       <div class="item-row-name">${esc(item.name)}</div>
       <div class="item-row-price">${fmt(item.price)}</div>
-      <button class="btn btn-ghost" onclick="removeItem(${item.id})">✕</button>
+      <button class="btn btn-ghost" data-item-id="${item.id}" onclick="removeItem(this)">✕</button>
     `;
     list.appendChild(row);
   });
@@ -1492,11 +1493,13 @@ function renderClaimItems() {
     const btns = isOther ? '' : `
       <div class="ci-claim-btns">
         <button class="ci-claim-btn ${isMe ? 'active-mine' : ''}"
-          onclick="claimItem(event,'${item.id}','mine')">
+          data-item-id="${item.id}" data-mode="mine"
+          onclick="claimItem(event)">
           Mine${isMe ? ' ✓' : ''}
         </button>
         <button class="ci-claim-btn ${isSplit ? 'active-split' : ''}"
-          onclick="claimItem(event,'${item.id}','split')">
+          data-item-id="${item.id}" data-mode="split"
+          onclick="claimItem(event)">
           Split ÷${partyCount}${isSplit ? ' ✓' : ''}
         </button>
       </div>`;
@@ -1515,8 +1518,10 @@ function renderClaimItems() {
   document.getElementById('claim-total-amt').textContent = fmt(myTotal);
 }
 
-async function claimItem(e, itemId, mode) {
+async function claimItem(e) {
   e.stopPropagation();
+  const itemId = parseFloat(e.currentTarget.dataset.itemId);
+  const mode = e.currentTarget.dataset.mode;
   if (!claimState.claims) claimState.claims = {};
   const current = claimState.claims[itemId];
 
@@ -1570,7 +1575,6 @@ function doneClaming() {
     : '';
 
   alert(`✓ Done!\n\n${claimerName}, you claimed ${myClaims.length} item(s) and shared ${splitClaims.length}.\nMine: ${fmt(mineTotal)}${splitLine}\nSubtotal: ${fmt(subtotal)}\nWith tax & tip: ≈${fmt(totalWithTT)}\n\nYour selections have been saved!`);
-}
 }
 
 // ══════════════════════════════════════════
