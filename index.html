@@ -342,6 +342,18 @@ input::placeholder { color: var(--ink4); }
 .claim-item:hover { border-color: var(--amber); background: var(--amber-pale); }
 .claim-item.claimed-me { border-color: var(--amber); background: var(--amber-pale); }
 .claim-item.claimed-other { opacity: 0.45; cursor: not-allowed; }
+.claim-item.claimed-split { border-color: #2a8a6e; background: rgba(42,138,110,.08); }
+.ci-claim-btns { display: flex; gap: 6px; margin-top: 8px; }
+.ci-claim-btn {
+  flex: 1; padding: 6px 4px; font-size: 11px; font-weight: 700;
+  border: 1.5px solid rgba(28,23,18,0.15); border-radius: 5px;
+  background: white; cursor: pointer; color: var(--ink2);
+  font-family: 'Nunito', sans-serif; letter-spacing: 0.3px;
+  transition: all 0.12s;
+}
+.ci-claim-btn:hover { border-color: var(--amber); color: var(--amber); }
+.ci-claim-btn.active-mine { background: var(--amber); border-color: var(--amber); color: white; }
+.ci-claim-btn.active-split { background: #2a8a6e; border-color: #2a8a6e; color: white; }
 .ci-left { flex: 1; }
 .ci-name { font-size: 15px; font-weight: 500; color: var(--ink); }
 .ci-claimedby { font-size: 11px; color: var(--ink3); margin-top: 2px; font-family: 'Courier Prime', monospace; }
@@ -1452,64 +1464,113 @@ function renderClaimItems() {
   const list = document.getElementById('claim-items-list');
   list.innerHTML = '';
   const claims = claimState.claims || {};
+  const partyCount = (claimState.parties || []).length || 1;
   let myTotal = 0;
+
   (claimState.items || []).forEach(item => {
     const claimedBy = claims[item.id];
     const isMe = claimedBy === claimerName;
-    const isOther = claimedBy && !isMe;
-    const div = document.createElement('div');
-    div.className = 'claim-item' + (isMe ? ' claimed-me' : isOther ? ' claimed-other' : '');
-    div.onclick = async () => {
-      if (isOther) return;
-      if (!claimState.claims) claimState.claims = {};
-      if (isMe) { delete claimState.claims[item.id]; }
-      else { claimState.claims[item.id] = claimerName; }
-      renderClaimItems();
-      // Sync claims to KV so all devices stay in sync
-      if (claimState.sessionId) {
-        try {
-          await fetch(PROXY_URL + '/session?id=' + encodeURIComponent(claimState.sessionId), {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ claims: claimState.claims }),
-          });
-        } catch(e) { console.warn('Claim sync failed:', e); }
-      }
-    };
+    const isSplit = claimedBy === '__split__';
+    const isOther = claimedBy && !isMe && !isSplit;
+
     if (isMe) myTotal += item.price;
+    if (isSplit) myTotal += item.price / partyCount;
+
+    const statusText = isMe
+      ? '✓ Yours'
+      : isSplit
+        ? `÷ Split equally · your share ${fmt(item.price / partyCount)}`
+        : isOther
+          ? `Claimed by ${esc(claimedBy)}`
+          : 'Unclaimed — tap to claim';
+
+    const div = document.createElement('div');
+    div.className = 'claim-item'
+      + (isMe ? ' claimed-me' : isSplit ? ' claimed-split' : isOther ? ' claimed-other' : '');
+
+    // Buttons only shown if not claimed by someone else
+    const btns = isOther ? '' : `
+      <div class="ci-claim-btns">
+        <button class="ci-claim-btn ${isMe ? 'active-mine' : ''}"
+          onclick="claimItem(event,'${item.id}','mine')">
+          Mine${isMe ? ' ✓' : ''}
+        </button>
+        <button class="ci-claim-btn ${isSplit ? 'active-split' : ''}"
+          onclick="claimItem(event,'${item.id}','split')">
+          Split ÷${partyCount}${isSplit ? ' ✓' : ''}
+        </button>
+      </div>`;
+
     div.innerHTML = `
       <div class="ci-left">
         <div class="ci-name">${esc(item.name)}</div>
-        <div class="ci-claimedby">${isMe ? '✓ Yours' : isOther ? `Claimed by ${esc(claimedBy)}` : 'Unclaimed'}</div>
+        <div class="ci-claimedby">${statusText}</div>
+        ${btns}
       </div>
       <span class="ci-price">${fmt(item.price)}</span>
-      <span class="ci-check">${isMe ? '✓' : isOther ? '🔒' : '○'}</span>
     `;
     list.appendChild(div);
   });
+
   document.getElementById('claim-total-amt').textContent = fmt(myTotal);
 }
 
+async function claimItem(e, itemId, mode) {
+  e.stopPropagation();
+  if (!claimState.claims) claimState.claims = {};
+  const current = claimState.claims[itemId];
+
+  // Toggle off if already in this mode
+  if (mode === 'mine' && current === claimerName) {
+    delete claimState.claims[itemId];
+  } else if (mode === 'split' && current === '__split__') {
+    delete claimState.claims[itemId];
+  } else if (mode === 'mine') {
+    claimState.claims[itemId] = claimerName;
+  } else {
+    claimState.claims[itemId] = '__split__';
+  }
+
+  renderClaimItems();
+
+  // Sync to KV
+  if (claimState.sessionId) {
+    try {
+      await fetch(PROXY_URL + '/session?id=' + encodeURIComponent(claimState.sessionId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claims: claimState.claims }),
+      });
+    } catch(e) { console.warn('Claim sync failed:', e); }
+  }
+}
+
 function doneClaming() {
-  // Re-encode updated state and redirect back to results
-  const newHash = '#session=' + btoa(JSON.stringify({
-    items: claimState.items,
-    parties: claimState.parties,
-    tax: claimState.tax,
-    tip: claimState.tip,
-    claims: claimState.claims,
-    sessionId: claimState.sessionId,
-  }));
-  // Show summary
-  const myClaims = Object.entries(claimState.claims || {})
-    .filter(([,v]) => v === claimerName)
-    .map(([id]) => claimState.items.find(i => i.id == id))
-    .filter(Boolean);
-  const myTotal = myClaims.reduce((a,b) => a + b.price, 0);
+  const partyCount = (claimState.parties || []).length || 1;
   const tax = claimState.tax || 9;
   const tip = claimState.tip || 18;
-  const totalWithTT = myTotal * (1 + tax/100 + tip/100);
-  alert(`✓ Done!\n\n${claimerName}, you claimed ${myClaims.length} item(s).\nSubtotal: ${fmt(myTotal)}\nWith tax & tip: ≈${fmt(totalWithTT)}\n\nYour selections have been saved. Tell the organizer!`);
+
+  const myClaims = Object.entries(claimState.claims || {})
+    .filter(([, v]) => v === claimerName)
+    .map(([id]) => claimState.items.find(i => i.id == id))
+    .filter(Boolean);
+
+  const splitClaims = Object.entries(claimState.claims || {})
+    .filter(([, v]) => v === '__split__')
+    .map(([id]) => claimState.items.find(i => i.id == id))
+    .filter(Boolean);
+
+  const mineTotal = myClaims.reduce((a, b) => a + b.price, 0);
+  const splitTotal = splitClaims.reduce((a, b) => a + b.price / partyCount, 0);
+  const subtotal = mineTotal + splitTotal;
+  const totalWithTT = subtotal * (1 + tax / 100 + tip / 100);
+
+  const splitLine = splitClaims.length
+    ? `\nShared items (÷${partyCount}): ${fmt(splitTotal)}`
+    : '';
+
+  alert(`✓ Done!\n\n${claimerName}, you claimed ${myClaims.length} item(s) and shared ${splitClaims.length}.\nMine: ${fmt(mineTotal)}${splitLine}\nSubtotal: ${fmt(subtotal)}\nWith tax & tip: ≈${fmt(totalWithTT)}\n\nYour selections have been saved!`);
+}
 }
 
 // ══════════════════════════════════════════
