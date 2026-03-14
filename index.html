@@ -272,6 +272,7 @@ input::placeholder { color: var(--ink4); }
   animation: slideUp 0.3s ease forwards; opacity: 0;
 }
 @keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
 .receipt-head {
   padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
 }
@@ -647,6 +648,14 @@ input::placeholder { color: var(--ink4); }
       <div class="results-h">Here's the <span>split</span></div>
       <div class="results-sub" id="results-session-name" style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--ink3);margin-top:6px"></div>
       <div class="results-sub">Tap Venmo or Zelle to send payment instantly</div>
+      <div id="live-indicator" style="display:none;margin-top:10px;display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap">
+        <span id="live-dot" style="display:inline-flex;align-items:center;gap:5px;font-family:'Courier Prime',monospace;font-size:11px;color:#2a8a6e;letter-spacing:1px">
+          <span style="width:7px;height:7px;border-radius:50%;background:#2a8a6e;display:inline-block;animation:pulse-dot 1.5s infinite"></span>
+          LIVE
+        </span>
+        <span id="live-status" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3)">watching for claims…</span>
+      </div>
+      <div id="live-feed" style="display:none;margin-top:8px;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);text-align:center;min-height:16px"></div>
     </div>
 
     <!-- Establishment banner -->
@@ -896,12 +905,12 @@ function goStep(n) {
   currentStep = n;
   if (n === 2) renderAssignList();
   if (n === 3) {
-    // Pre-fill session name input with current session name
     const input = document.getElementById('session-name-input');
     if (input && state.sessionName) input.value = state.sessionName;
     updateSessionNameDisplay();
   }
-  if (n === 4) recalculate();
+  if (n === 4) { recalculate(); startLiveSync(); }
+  else { stopLiveSync(); }
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -1399,6 +1408,81 @@ function recalculate() {
     grid.appendChild(card);
   });
   document.getElementById('grand-total').textContent = fmt(grand);
+}
+
+// ══════════════════════════════════════════
+// LIVE CLAIM SYNC (organizer polling)
+// ══════════════════════════════════════════
+let syncInterval = null;
+let lastSyncTime = null;
+let knownClaims = {};
+
+function startLiveSync() {
+  if (!state.sessionId) return;
+  stopLiveSync();
+  knownClaims = JSON.parse(JSON.stringify(state.claims || {}));
+  document.getElementById('live-indicator').style.display = 'flex';
+  document.getElementById('live-feed').style.display = 'block';
+  syncInterval = setInterval(pollClaims, 4000);
+}
+
+function stopLiveSync() {
+  if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+  document.getElementById('live-indicator').style.display = 'none';
+  document.getElementById('live-feed').style.display = 'none';
+}
+
+async function pollClaims() {
+  if (!state.sessionId) return;
+  try {
+    const res = await fetch(PROXY_URL + '/session?id=' + encodeURIComponent(state.sessionId));
+    if (!res.ok) return;
+    const session = await res.json();
+    const newClaims = session.claims || {};
+
+    // Detect changes
+    const changes = [];
+    const partyCount = state.parties.length || 1;
+    Object.entries(newClaims).forEach(([itemId, claimer]) => {
+      if (knownClaims[itemId] !== claimer) {
+        const item = state.items.find(i => String(i.id) === String(itemId));
+        const itemName = item ? item.name : 'an item';
+        if (claimer === '__split__') {
+          changes.push(`÷ ${itemName} split by everyone`);
+        } else {
+          changes.push(`✓ ${claimer} claimed ${itemName}`);
+        }
+      }
+    });
+    // Detect unclaims
+    Object.keys(knownClaims).forEach(itemId => {
+      if (!newClaims[itemId]) {
+        const item = state.items.find(i => String(i.id) === String(itemId));
+        const itemName = item ? item.name : 'an item';
+        changes.push(`○ ${itemName} unclaimed`);
+      }
+    });
+
+    if (changes.length) {
+      // Merge new claims into state and re-render
+      state.claims = newClaims;
+      knownClaims = JSON.parse(JSON.stringify(newClaims));
+      recalculate();
+      // Show activity in feed
+      const feed = document.getElementById('live-feed');
+      feed.textContent = changes[changes.length - 1];
+      feed.style.color = 'var(--amber)';
+      setTimeout(() => { feed.style.color = 'var(--ink3)'; }, 2000);
+    }
+
+    // Update last-synced timestamp
+    lastSyncTime = new Date();
+    document.getElementById('live-status').textContent =
+      'updated ' + lastSyncTime.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  } catch(e) {
+    document.getElementById('live-status').textContent = 'sync error — retrying…';
+  }
 }
 
 function handleVenmo(e, amount) {
