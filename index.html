@@ -679,13 +679,10 @@ input::placeholder { color: var(--ink4); }
     <div id="claim-session-name" style="font-family:'Courier Prime',monospace;font-size:12px;color:var(--ink3);margin-top:6px"></div>
   </div>
 
-  <div class="card" style="margin-bottom:16px">
+  <div class="card" style="margin-bottom:16px" id="claim-who-card">
     <div class="card-body">
-      <div class="claim-name-label">What's your name?</div>
-      <div class="row">
-        <input type="text" id="claimer-name" placeholder="Your name…" maxlength="30">
-        <button class="btn btn-green" onclick="setClaimer()">Go →</button>
-      </div>
+      <div class="claim-name-label">Who are you?</div>
+      <div id="claim-party-picker" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px"></div>
     </div>
   </div>
 
@@ -1411,16 +1408,41 @@ function showClaimView() {
   document.getElementById('claim-view').style.display = 'block';
   if (claimState) {
     const count = claimState.items ? claimState.items.length : 0;
-    document.getElementById('claim-host-info').textContent = `${count} items to split · Tap what you ordered`;
+    document.getElementById('claim-host-info').textContent = `${count} items to split · Tap your name to start`;
     const snEl = document.getElementById('claim-session-name');
     if (snEl && claimState.sessionName) snEl.textContent = claimState.sessionName;
+    renderPartyPicker();
   }
 }
 
-function setClaimer() {
-  const nameEl = document.getElementById('claimer-name');
-  claimerName = nameEl.value.trim();
-  if (!claimerName) { nameEl.focus(); return; }
+function renderPartyPicker() {
+  const picker = document.getElementById('claim-party-picker');
+  if (!picker) return;
+  const parties = claimState.parties || [];
+  picker.innerHTML = '';
+  parties.forEach(party => {
+    const btn = document.createElement('button');
+    btn.className = 'btn ' + party.color;
+    btn.style.cssText = 'font-size:15px;font-weight:700;padding:12px 22px;border-radius:8px;cursor:pointer;transition:transform 0.1s';
+    btn.textContent = party.name;
+    btn.onclick = () => selectParty(party);
+    picker.appendChild(btn);
+  });
+}
+
+function selectParty(party) {
+  claimerName = party.name;
+  // Visually mark selected, hide the picker card
+  document.getElementById('claim-who-card').style.display = 'none';
+  // Show a small "claiming as" badge above items
+  let badge = document.getElementById('claiming-as-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'claiming-as-badge';
+    badge.style.cssText = 'text-align:center;margin-bottom:12px;font-size:13px;font-weight:700;font-family:"Courier Prime",monospace;color:var(--ink3)';
+    document.getElementById('claim-items-wrap').before(badge);
+  }
+  badge.innerHTML = `Claiming as <span class="btn ${party.color}" style="padding:3px 12px;font-size:12px;font-weight:700;border-radius:20px">${party.name}</span> &nbsp;<a href="#" onclick="document.getElementById('claim-who-card').style.display='';document.getElementById('claim-items-wrap').style.display='none';return false;" style="font-size:11px;color:var(--amber)">change</a>`;
   document.getElementById('claim-items-wrap').style.display = 'block';
   renderClaimItems();
   document.getElementById('claim-items-wrap').scrollIntoView({behavior:'smooth'});
