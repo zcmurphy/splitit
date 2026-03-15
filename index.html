@@ -1213,9 +1213,10 @@ function addParty() {
   renderParties();
 }
 
-function removeParty(id) {
-  state.parties = state.parties.filter(p => p.id !== id);
-  state.items.forEach(i => { i.assignees = i.assignees.filter(a => a !== id); });
+function removeParty(btn) {
+  const id = btn.dataset.partyId;
+  state.parties = state.parties.filter(p => String(p.id) !== String(id));
+  state.items.forEach(i => { i.assignees = i.assignees.filter(a => String(a) !== String(id)); });
   renderParties();
   renderAssignList();
 }
@@ -1229,7 +1230,7 @@ function renderParties() {
   state.parties.forEach(p => {
     const chip = document.createElement('div');
     chip.className = `chip ${p.color}`;
-    chip.innerHTML = `${esc(p.name)} <button class="x" onclick="removeParty(${p.id})">×</button>`;
+    chip.innerHTML = `${esc(p.name)} <button class="x" data-party-id="${p.id}" onclick="removeParty(this)">×</button>`;
     chips.appendChild(chip);
   });
 }
@@ -1249,7 +1250,7 @@ function renderAssignList() {
     const chipsHtml = state.parties.length
       ? state.parties.map(p => {
           const on = item.assignees.includes(p.id) ? 'on' : '';
-          return `<span class="ac ${p.color} ${on}" onclick="toggleAssign(${item.id},${p.id})">${esc(p.name)}</span>`;
+          return `<span class="ac ${p.color} ${on}" data-item-id="${item.id}" data-party-id="${p.id}" onclick="toggleAssign(this)">${esc(p.name)}</span>`;
         }).join('')
       : '<span style="font-size:11px;color:var(--text3)">Add parties first</span>';
     row.innerHTML = `
@@ -1261,13 +1262,19 @@ function renderAssignList() {
   });
 }
 
-function toggleAssign(itemId, partyId) {
-  const item = state.items.find(i => i.id === itemId);
+function toggleAssign(el) {
+  const itemId = el.dataset.itemId;
+  const partyId = el.dataset.partyId;
+  // Match by string comparison to handle float IDs safely
+  const item = state.items.find(i => String(i.id) === String(itemId));
   if (!item) return;
-  if (item.assignees.includes(partyId)) {
-    item.assignees = item.assignees.filter(a => a !== partyId);
+  const idx = item.assignees.findIndex(a => String(a) === String(partyId));
+  if (idx !== -1) {
+    item.assignees.splice(idx, 1);
   } else {
-    item.assignees.push(partyId);
+    // Store as same type as existing assignees (preserve original party id)
+    const party = state.parties.find(p => String(p.id) === String(partyId));
+    if (party) item.assignees.push(party.id);
   }
   renderAssignList();
 }
@@ -1413,22 +1420,26 @@ function recalculate() {
         partyItemMap[owner.id].push({ item, share: item.price, splitBy: 1 });
       } else {
         // Party name not found — fall back to assignees
-        const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
+        const assigned = item.assignees.filter(id => state.parties.find(p => String(p.id) === String(id)));
         if (!assigned.length) return;
         const share = item.price / assigned.length;
         assigned.forEach(id => {
-          subs[id] += share;
-          partyItemMap[id].push({ item, share, splitBy: assigned.length });
+          const party = state.parties.find(p => String(p.id) === String(id));
+          if (!party) return;
+          subs[party.id] += share;
+          partyItemMap[party.id].push({ item, share, splitBy: assigned.length });
         });
       }
     } else {
       // No claim — use assignees from the Assign step
-      const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
+      const assigned = item.assignees.filter(id => state.parties.find(p => String(p.id) === String(id)));
       if (!assigned.length) return;
       const share = item.price / assigned.length;
       assigned.forEach(id => {
-        subs[id] += share;
-        partyItemMap[id].push({ item, share, splitBy: assigned.length });
+        const party = state.parties.find(p => String(p.id) === String(id));
+        if (!party) return;
+        subs[party.id] += share;
+        partyItemMap[party.id].push({ item, share, splitBy: assigned.length });
       });
     }
   });
