@@ -1350,61 +1350,101 @@ function recalculate() {
     document.getElementById('receipts-grid').innerHTML = '<div class="empty">Add parties and items first.</div>';
     return;
   }
+
+  const claims = state.claims || {};
+  const partyCount = state.parties.length;
+  const hasClaims = Object.keys(claims).length > 0;
+
+  // Build subtotals per party — claims override assignees when present
   const subs = {};
-  state.parties.forEach(p => subs[p.id] = 0);
+  const partyItemMap = {}; // party.id → [{item, share, splitBy}]
+  state.parties.forEach(p => { subs[p.id] = 0; partyItemMap[p.id] = []; });
+
   state.items.forEach(item => {
-    const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
-    if (!assigned.length) return;
-    const share = item.price / assigned.length;
-    assigned.forEach(id => subs[id] = (subs[id]||0) + share);
+    const claim = claims[String(item.id)];
+
+    if (claim === '__split__') {
+      // Claimed as split — divide evenly among ALL parties
+      const share = item.price / partyCount;
+      state.parties.forEach(p => {
+        subs[p.id] += share;
+        partyItemMap[p.id].push({ item, share, splitBy: partyCount });
+      });
+    } else if (claim) {
+      // Claimed by a specific party name — find the party
+      const owner = state.parties.find(p => p.name === claim);
+      if (owner) {
+        subs[owner.id] += item.price;
+        partyItemMap[owner.id].push({ item, share: item.price, splitBy: 1 });
+      } else {
+        // Party name not found — fall back to assignees
+        const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
+        if (!assigned.length) return;
+        const share = item.price / assigned.length;
+        assigned.forEach(id => {
+          subs[id] += share;
+          partyItemMap[id].push({ item, share, splitBy: assigned.length });
+        });
+      }
+    } else {
+      // No claim — use assignees from the Assign step
+      const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
+      if (!assigned.length) return;
+      const share = item.price / assigned.length;
+      assigned.forEach(id => {
+        subs[id] += share;
+        partyItemMap[id].push({ item, share, splitBy: assigned.length });
+      });
+    }
   });
+
   let grand = 0;
   const grid = document.getElementById('receipts-grid');
   grid.innerHTML = '';
   renderMetaSummary();
-  // Session name in results header
-  const sn = state.sessionName || '';
+
+  // Session name
   const snEl = document.getElementById('results-session-name');
-  if (snEl) snEl.textContent = sn;
+  if (snEl) snEl.textContent = state.sessionName || '';
+
   // Stats
   const totalItems = state.items.length;
-  const splitItems = state.items.filter(i => i.assignees.filter(id => state.parties.find(p=>p.id===id)).length > 1).length;
-  const totalCost = state.items.reduce((a,b) => a+b.price, 0);
+  const claimedSplit = Object.values(claims).filter(v => v === '__split__').length;
+  const claimedMine = Object.values(claims).filter(v => v && v !== '__split__').length;
+  const totalCost = state.items.reduce((a, b) => a + b.price, 0);
   const avgCost = totalItems ? totalCost / totalItems : 0;
   document.getElementById('stat-items').textContent = totalItems;
-  document.getElementById('stat-split').textContent = splitItems;
+  document.getElementById('stat-split').textContent = hasClaims ? `${claimedMine + claimedSplit} claimed` : state.items.filter(i => i.assignees.filter(id => state.parties.find(p=>p.id===id)).length > 1).length;
   document.getElementById('stat-total').textContent = fmt(totalCost * (1 + tax/100 + tip/100));
   document.getElementById('stat-avg').textContent = fmt(avgCost);
   document.getElementById('results-stats').style.display = 'grid';
+
   state.parties.forEach((party, idx) => {
     const sub = subs[party.id] || 0;
     const taxAmt = sub * tax / 100;
     const tipAmt = sub * tip / 100;
     const total = sub + taxAmt + tipAmt;
     grand += total;
-    const partyItems = state.items.filter(i => i.assignees.includes(party.id));
-    const linesHtml = partyItems.map(item => {
-      const assigned = item.assignees.filter(id => state.parties.find(p => p.id === id));
-      const share = item.price / assigned.length;
-      return `<div class="r-line">
+
+    const lines = partyItemMap[party.id] || [];
+    const linesHtml = lines.map(({ item, share, splitBy }) => `
+      <div class="r-line">
         <span class="r-name">${esc(item.name)}</span>
-        ${assigned.length > 1 ? `<span class="r-split">÷${assigned.length}</span>` : ''}
+        ${splitBy > 1 ? `<span class="r-split">÷${splitBy}</span>` : ''}
         <span class="r-price">${fmt(share)}</span>
-      </div>`;
-    }).join('');
+      </div>`).join('');
+
     const card = document.createElement('div');
     card.className = 'receipt-card';
     card.style.animationDelay = (idx * 70) + 'ms';
-    // Venmo/Zelle links
     const amount = total.toFixed(2);
     const note = encodeURIComponent(`SplitIt bill share`);
     const venmoUrl = `venmo://paycharge?txn=pay&amount=${amount}&note=${note}`;
-    const venmoFallback = `https://venmo.com/`;
     const zelleUrl = `https://enroll.zellepay.com/qr-codes`;
     card.innerHTML = `
       <div class="receipt-head ${C_HEADS[COLORS.indexOf(party.color)]}">
         <span class="receipt-name">${esc(party.name)}</span>
-        <span class="receipt-count">${partyItems.length} item${partyItems.length!==1?'s':''}</span>
+        <span class="receipt-count">${lines.length} item${lines.length!==1?'s':''}</span>
       </div>
       <div class="receipt-items">${linesHtml || '<div class="empty">No items assigned</div>'}</div>
       <hr class="divider" style="margin:0 16px">
