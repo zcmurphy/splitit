@@ -1115,14 +1115,14 @@ Rules for meta:
 
       // Auto-calculate tax % if we have tax + subtotal from the receipt
       if (meta.tax != null && meta.subtotal != null && meta.subtotal > 0) {
-        const taxPct = Math.round((meta.tax / meta.subtotal) * 1000) / 10;
+        const taxPct = parseFloat((meta.tax / meta.subtotal * 100).toFixed(1));
         document.getElementById('tax').value = taxPct;
         state.tax = taxPct;
         document.getElementById('tax-ocr-note').style.display = 'block';
       } else if (meta.tax != null && itemsArr.length > 0) {
         const itemsSubtotal = itemsArr.reduce((a, b) => a + parseFloat(b.price || 0), 0);
         if (itemsSubtotal > 0) {
-          const taxPct = Math.round((meta.tax / itemsSubtotal) * 1000) / 10;
+          const taxPct = parseFloat((meta.tax / itemsSubtotal * 100).toFixed(1));
           document.getElementById('tax').value = taxPct;
           state.tax = taxPct;
           document.getElementById('tax-ocr-note').style.display = 'block';
@@ -1157,7 +1157,7 @@ function renderMeta() {
     { icon: '📅', label: 'Date',           val: m.date },
     { icon: '🕐', label: 'Time',           val: m.time },
     { icon: '🧾', label: 'Subtotal',       val: m.subtotal != null ? fmt(m.subtotal) : null },
-    { icon: '🏛️', label: 'Tax',            val: m.tax != null ? fmt(m.tax) + (state.tax ? ` (${state.tax}%)` : '') : null },
+    { icon: '🏛️', label: 'Tax',            val: m.tax != null ? fmt(m.tax) + (state.tax != null ? ` (${parseFloat(parseFloat(state.tax).toFixed(1))}%)` : '') : null },
     { icon: '💰', label: 'Total',          val: m.total != null ? fmt(m.total) : null },
   ].filter(f => f.val);
   document.getElementById('meta-fields').innerHTML = fields.map(f =>
