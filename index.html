@@ -1111,9 +1111,8 @@ Rules for meta:
 
     if (meta) {
       state.meta = meta;
-      renderMeta();
 
-      // Auto-calculate tax % if we have tax + subtotal from the receipt
+      // Calculate tax % BEFORE renderMeta so it shows correctly in Receipt Details
       if (meta.tax != null && meta.subtotal != null && meta.subtotal > 0) {
         const taxPct = parseFloat((meta.tax / meta.subtotal * 100).toFixed(1));
         document.getElementById('tax').value = taxPct;
@@ -1128,6 +1127,8 @@ Rules for meta:
           document.getElementById('tax-ocr-note').style.display = 'block';
         }
       }
+
+      renderMeta();
     }
 
     status.className = 'ocr-status';
