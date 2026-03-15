@@ -1045,7 +1045,10 @@ Format:
     "address": "Full address on one line or null",
     "phone": "Phone number or null",
     "date": "Date as printed e.g. 03/07/2026 or null",
-    "time": "Time as printed e.g. 7:42 PM or null"
+    "time": "Time as printed e.g. 7:42 PM or null",
+    "subtotal": 92.50,
+    "tax": 8.33,
+    "total": 100.83
   },
   "items": [
     {"name": "Item Name", "price": 12.99}
@@ -1056,12 +1059,13 @@ Rules for items:
 - Include all food, drink, and appetizer line items
 - If a line shows a quantity greater than 1 (e.g. "2 Margarita 18.00" or "Burger x3 $36.00"), expand it into that many SEPARATE identical entries each at the per-unit price. For example "2 Margarita 18.00" becomes two entries: {"name": "Margarita", "price": 9.00} and {"name": "Margarita", "price": 9.00}
 - If the line price is the total for the quantity, divide by quantity to get per-unit price
-- Do NOT include tax, tip, subtotal, total, service charges, or fees
+- Do NOT include tax, tip, subtotal, total, service charges, or fees as items
 - price must be a number (no dollar sign)
 - name should be clean and readable, without the quantity prefix
 
 Rules for meta:
 - Use null for any field you cannot find or read
+- subtotal, tax, total must be numbers (no dollar sign), or null if not found
 - Do not guess — only include what is clearly printed on the receipt`
             }
           ]
@@ -1106,6 +1110,21 @@ Rules for meta:
     if (meta) {
       state.meta = meta;
       renderMeta();
+
+      // Auto-calculate tax % if we have tax + subtotal from the receipt
+      if (meta.tax != null && meta.subtotal != null && meta.subtotal > 0) {
+        const taxPct = Math.round((meta.tax / meta.subtotal) * 1000) / 10; // 1 decimal
+        document.getElementById('tax').value = taxPct;
+        state.tax = taxPct;
+      } else if (meta.tax != null && itemsArr.length > 0) {
+        // Fallback: calculate subtotal from extracted items
+        const itemsSubtotal = itemsArr.reduce((a, b) => a + parseFloat(b.price || 0), 0);
+        if (itemsSubtotal > 0) {
+          const taxPct = Math.round((meta.tax / itemsSubtotal) * 1000) / 10;
+          document.getElementById('tax').value = taxPct;
+          state.tax = taxPct;
+        }
+      }
     }
 
     status.className = 'ocr-status';
@@ -1134,6 +1153,9 @@ function renderMeta() {
     { icon: '📞', label: 'Phone',          val: m.phone },
     { icon: '📅', label: 'Date',           val: m.date },
     { icon: '🕐', label: 'Time',           val: m.time },
+    { icon: '🧾', label: 'Subtotal',       val: m.subtotal != null ? fmt(m.subtotal) : null },
+    { icon: '🏛️', label: 'Tax',            val: m.tax != null ? fmt(m.tax) + (state.tax ? ` (${state.tax}%)` : '') : null },
+    { icon: '💰', label: 'Total',          val: m.total != null ? fmt(m.total) : null },
   ].filter(f => f.val);
   document.getElementById('meta-fields').innerHTML = fields.map(f =>
     `<div class="meta-field">
@@ -1807,6 +1829,8 @@ async function pollClaims() {
       state.claims = newClaims;
       knownClaims = JSON.parse(JSON.stringify(newClaims));
       recalculate();
+      // Also refresh assign tab if visible
+      if (currentStep === 2) renderAssignList();
       // Show activity in feed
       const feed = document.getElementById('live-feed');
       feed.textContent = changes[changes.length - 1];
