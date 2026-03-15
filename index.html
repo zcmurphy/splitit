@@ -542,7 +542,12 @@ input::placeholder { color: var(--ink4); }
         </div>
       </div>
     </div>
-    <div style="text-align:right"><button class="btn btn-green" onclick="goStep(1)">Next: Add Parties →</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <button class="btn btn-outline btn-sm" onclick="loadDemoData()" style="color:var(--ink3);border-style:dashed">
+        🎲 Load demo data
+      </button>
+      <button class="btn btn-green" onclick="goStep(1)">Next: Add Parties →</button>
+    </div>
   </div>
 
   <!-- ── STEP 2: PARTIES ── -->
@@ -1474,8 +1479,73 @@ function recalculate() {
 }
 
 // ══════════════════════════════════════════
-// RECENT SESSIONS (stored in localStorage)
+// DEMO DATA
 // ══════════════════════════════════════════
+function loadDemoData() {
+  const menuItems = [
+    ['Margherita Pizza', 18], ['Truffle Fries', 12], ['Caesar Salad', 14],
+    ['Grilled Salmon', 28], ['Chicken Tacos', 16], ['Burrata', 15],
+    ['Ribeye Steak', 42], ['Lobster Bisque', 14], ['Mushroom Risotto', 22],
+    ['Shrimp Cocktail', 18], ['Bruschetta', 10], ['Tiramisu', 9],
+    ['Cheesecake', 8], ['Calamari', 13], ['Fish & Chips', 19],
+    ['Veggie Burger', 15], ['Pad Thai', 17], ['Sushi Roll', 16],
+  ];
+  const partyNames = [
+    ['Alice', 'Bob', 'Carol', 'Dave', 'Emma', 'Frank', 'Grace', 'Henry'],
+    ['The Smiths', 'The Johnsons', 'The Garcias', 'The Lees'],
+    ['Table 1', 'Table 2', 'Table 3'],
+  ];
+
+  // Pick random set: 2–4 parties, 4–9 items
+  const nameSet = partyNames[Math.floor(Math.random() * partyNames.length)];
+  const numParties = 2 + Math.floor(Math.random() * 3);
+  const numItems = 4 + Math.floor(Math.random() * 6);
+
+  // Shuffle helpers
+  const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+
+  // Reset state
+  state.items = [];
+  state.parties = [];
+  state.claims = {};
+  state.meta = null;
+  colorIdx = 0;
+
+  // Add parties
+  shuffle(nameSet).slice(0, numParties).forEach(name => {
+    const color = COLORS[colorIdx % COLORS.length];
+    colorIdx++;
+    state.parties.push({ id: Date.now() + Math.random(), name, color });
+  });
+
+  // Add items with random prices ±$1.50 and random assignees
+  shuffle(menuItems).slice(0, numItems).forEach(([name, basePrice]) => {
+    const price = Math.round((basePrice + (Math.random() * 3 - 1.5)) * 100) / 100;
+    // Randomly assign to 1–all parties
+    const assigneeCount = 1 + Math.floor(Math.random() * state.parties.length);
+    const assignees = shuffle(state.parties).slice(0, assigneeCount).map(p => p.id);
+    state.items.push({ id: Date.now() + Math.random(), name, price, assignees });
+  });
+
+  // Set a fun session name
+  const restaurants = ['Nobu', 'Catch', 'Carbone', 'Le Bernardin', 'Spago', 'Balthazar'];
+  const restaurant = restaurants[Math.floor(Math.random() * restaurants.length)];
+  const now = new Date();
+  state.sessionName = `${restaurant} · ${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+  state.meta = { establishment: restaurant, date: `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`, address: null, phone: null, time: null };
+
+  // Render everything
+  renderAll();
+  renderMeta();
+  document.getElementById('tax').value = 9;
+  document.getElementById('tip').value = 20;
+
+  // Flash confirmation
+  const btn = document.querySelector('[onclick="loadDemoData()"]');
+  if (btn) { btn.textContent = '✓ Demo loaded!'; setTimeout(() => { btn.textContent = '🎲 Load demo data'; }, 2000); }
+}
+
+
 function saveRecentSession() {
   if (!state.sessionId || !state.sessionName) return;
   try {
