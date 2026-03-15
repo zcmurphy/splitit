@@ -1043,9 +1043,11 @@ Format:
 
 Rules for items:
 - Include all food, drink, and appetizer line items
+- If a line shows a quantity greater than 1 (e.g. "2 Margarita 18.00" or "Burger x3 $36.00"), expand it into that many SEPARATE identical entries each at the per-unit price. For example "2 Margarita 18.00" becomes two entries: {"name": "Margarita", "price": 9.00} and {"name": "Margarita", "price": 9.00}
+- If the line price is the total for the quantity, divide by quantity to get per-unit price
 - Do NOT include tax, tip, subtotal, total, service charges, or fees
 - price must be a number (no dollar sign)
-- name should be clean and readable
+- name should be clean and readable, without the quantity prefix
 
 Rules for meta:
 - Use null for any field you cannot find or read
