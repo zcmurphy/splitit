@@ -591,28 +591,55 @@ input::placeholder { color: var(--ink4); }
     <div class="card">
       <div class="card-head"><span class="card-title">⚙️ Tax &amp; Tip</span></div>
       <div class="card-body">
-        <div class="settings-grid">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+
+          <!-- Tax column -->
           <div class="setting">
             <label>Tax Rate</label>
             <div class="pct-row">
-              <input type="number" id="tax" value="9" min="0" max="30" step="0.1">
+              <input type="number" id="tax" value="9" min="0" max="30" step="0.1" oninput="updateTaxTipCalc()">
               <span class="pct-lbl">%</span>
             </div>
-            <div id="tax-ocr-note" style="display:none;font-family:'Courier Prime',monospace;font-size:10px;color:#2a8a6e;margin-top:5px">✓ Auto-detected from receipt</div>
+            <div id="tax-ocr-note" style="display:none;font-family:'Courier Prime',monospace;font-size:10px;color:#2a8a6e;margin-top:5px">✓ From receipt</div>
+            <div id="calc-tax-amt" style="font-family:'Courier Prime',monospace;font-size:13px;font-weight:700;color:var(--ink2);margin-top:8px">$0.00</div>
           </div>
+
+          <!-- Tip column -->
           <div class="setting">
             <label>Tip / Gratuity</label>
             <div class="pct-row">
-              <input type="number" id="tip" value="18" min="0" max="100" step="1">
+              <input type="number" id="tip" value="18" min="0" max="100" step="1" oninput="updateTaxTipCalc()">
               <span class="pct-lbl">%</span>
             </div>
-            <div class="tip-presets">
+            <div class="tip-presets" style="margin-top:6px">
               <button class="btn btn-outline tip-preset" onclick="setTip(15)">15%</button>
               <button class="btn btn-outline tip-preset" onclick="setTip(18)">18%</button>
               <button class="btn btn-outline tip-preset" onclick="setTip(20)">20%</button>
               <button class="btn btn-outline tip-preset" onclick="setTip(22)">22%</button>
             </div>
+            <div id="calc-tip-amt" style="font-family:'Courier Prime',monospace;font-size:13px;font-weight:700;color:var(--ink2);margin-top:8px">$0.00</div>
           </div>
+
+          <!-- Totals column -->
+          <div class="setting">
+            <label>Total</label>
+            <div style="background:var(--parchment);border:1px solid var(--rule2);border-radius:6px;padding:10px 12px">
+              <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:5px">
+                <span>Subtotal</span><span id="calc-subtotal">$0.00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:5px">
+                <span>Tax</span><span id="calc-tax-line">$0.00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:8px">
+                <span>Tip</span><span id="calc-tip-line">$0.00</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;border-top:1px solid var(--rule2);padding-top:7px">
+                <span style="font-family:'Courier Prime',monospace;font-size:11px;font-weight:700;color:var(--ink);letter-spacing:1px">TOTAL</span>
+                <span id="calc-total" style="font-family:'Courier Prime',monospace;font-size:14px;font-weight:700;color:var(--amber)">$0.00</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -958,7 +985,7 @@ function goStep(n) {
   document.querySelectorAll('.step').forEach((el,i) => el.classList.toggle('active', i===n));
   document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', i===n));
   currentStep = n;
-  if (n === 2) renderAssignList();
+  if (n === 2) { renderAssignList(); updateTaxTipCalc(); }
   if (n === 3) {
     const input = document.getElementById('session-name-input');
     if (input && state.sessionName) input.value = state.sessionName;
@@ -1134,6 +1161,7 @@ Rules for meta:
     status.className = 'ocr-status';
     status.textContent = `✓ Extracted ${itemsArr.length} items from receipt!`;
     renderItems();
+    updateTaxTipCalc();
   } catch(e) {
     status.className = 'ocr-status';
     status.textContent = '';
@@ -1230,6 +1258,7 @@ function renderItems() {
     `;
     list.appendChild(row);
   });
+  updateTaxTipCalc();
 }
 
 // ══════════════════════════════════════════
@@ -1337,7 +1366,26 @@ function toggleAssign(el) {
 // ══════════════════════════════════════════
 // TAX / TIP
 // ══════════════════════════════════════════
-function setTip(v) { document.getElementById('tip').value = v; }
+function setTip(v) {
+  document.getElementById('tip').value = v;
+  updateTaxTipCalc();
+}
+
+function updateTaxTipCalc() {
+  const subtotal = state.items.reduce((a, b) => a + b.price, 0);
+  const tax = parseFloat(document.getElementById('tax').value) || 0;
+  const tip = parseFloat(document.getElementById('tip').value) || 0;
+  const taxAmt = subtotal * tax / 100;
+  const tipAmt = subtotal * tip / 100;
+  const total = subtotal + taxAmt + tipAmt;
+
+  document.getElementById('calc-subtotal').textContent = fmt(subtotal);
+  document.getElementById('calc-tax-amt').textContent = fmt(taxAmt);
+  document.getElementById('calc-tax-line').textContent = fmt(taxAmt);
+  document.getElementById('calc-tip-amt').textContent = fmt(tipAmt);
+  document.getElementById('calc-tip-line').textContent = fmt(tipAmt);
+  document.getElementById('calc-total').textContent = fmt(total);
+}
 
 // ══════════════════════════════════════════
 // SHARE LINK
