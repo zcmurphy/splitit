@@ -1526,20 +1526,20 @@ function loadDemoData() {
   state.meta = null;
   colorIdx = 0;
 
-  // Add parties
-  shuffle(nameSet).slice(0, numParties).forEach(name => {
+  // Add parties — generate IDs sequentially to avoid Date.now() collisions
+  shuffle(nameSet).slice(0, numParties).forEach((name, i) => {
     const color = COLORS[colorIdx % COLORS.length];
     colorIdx++;
-    state.parties.push({ id: Date.now() + Math.random(), name, color });
+    state.parties.push({ id: 1000 + i, name, color });
   });
 
-  // Add items with random prices ±$1.50 and random assignees
-  shuffle(menuItems).slice(0, numItems).forEach(([name, basePrice]) => {
+  // Add items — assign to all parties by default, then randomly remove some
+  shuffle(menuItems).slice(0, numItems).forEach(([name, basePrice], i) => {
     const price = Math.round((basePrice + (Math.random() * 3 - 1.5)) * 100) / 100;
-    // Randomly assign to 1–all parties
+    // Start with all parties assigned, then randomly keep 1–all
     const assigneeCount = 1 + Math.floor(Math.random() * state.parties.length);
     const assignees = shuffle(state.parties).slice(0, assigneeCount).map(p => p.id);
-    state.items.push({ id: Date.now() + Math.random(), name, price, assignees });
+    state.items.push({ id: 2000 + i, name, price, assignees });
   });
 
   // Set a fun session name
@@ -1811,7 +1811,7 @@ function renderClaimItems() {
   let myTotal = 0;
 
   (claimState.items || []).forEach(item => {
-    const claimedBy = claims[item.id];
+    const claimedBy = claims[String(item.id)];
     const isMe = claimedBy === claimerName;
     const isSplit = claimedBy === '__split__';
     const isOther = claimedBy && !isMe && !isSplit;
@@ -1862,7 +1862,7 @@ function renderClaimItems() {
 
 async function claimItem(e) {
   e.stopPropagation();
-  const itemId = parseFloat(e.currentTarget.dataset.itemId);
+  const itemId = String(e.currentTarget.dataset.itemId);
   const mode = e.currentTarget.dataset.mode;
   if (!claimState.claims) claimState.claims = {};
   const current = claimState.claims[itemId];
@@ -1925,15 +1925,19 @@ function doneClaming() {
   const partyCount = (claimState.parties || []).length || 1;
   const tax = claimState.tax || 9;
   const tip = claimState.tip || 18;
+  const claims = claimState.claims || {};
 
-  const myClaims = Object.entries(claimState.claims || {})
+  // Normalize: find items by loose ID match (handles string/number mismatches)
+  const findItem = id => claimState.items.find(i => String(i.id) === String(id));
+
+  const myClaims = Object.entries(claims)
     .filter(([, v]) => v === claimerName)
-    .map(([id]) => claimState.items.find(i => String(i.id) === String(id)))
+    .map(([id]) => findItem(id))
     .filter(Boolean);
 
-  const splitClaims = Object.entries(claimState.claims || {})
+  const splitClaims = Object.entries(claims)
     .filter(([, v]) => v === '__split__')
-    .map(([id]) => claimState.items.find(i => String(i.id) === String(id)))
+    .map(([id]) => findItem(id))
     .filter(Boolean);
 
   const mineTotal = myClaims.reduce((a, b) => a + b.price, 0);
@@ -1961,6 +1965,7 @@ function doneClaming() {
       <span class="r-price">${fmt(item.price / partyCount)}</span>
     </div>`).join('');
 
+  const itemCount = myClaims.length + splitClaims.length;
   const amount = totalWithTT.toFixed(2);
   const note = encodeURIComponent(`SplitIt — ${claimerName}`);
   const venmoUrl = `venmo://paycharge?txn=pay&amount=${amount}&note=${note}`;
@@ -1970,7 +1975,7 @@ function doneClaming() {
     <div class="receipt-card" style="box-shadow:none;border:none;padding:0;animation:none">
       <div class="receipt-head ${headClass}" style="border-radius:8px;margin-bottom:12px">
         <span class="receipt-name">${esc(claimerName)}</span>
-        <span class="receipt-count">${myClaims.length + splitClaims.length} item${myClaims.length + splitClaims.length !== 1 ? 's' : ''}</span>
+        <span class="receipt-count">${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
       </div>
 
       ${mineLines ? `
@@ -1981,8 +1986,10 @@ function doneClaming() {
         <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1.5px;color:var(--ink3);margin-bottom:6px">SHARED</div>
         <div class="receipt-items" style="margin-bottom:12px">${splitLines}</div>` : ''}
 
-      ${!myClaims.length && !splitClaims.length ? `
-        <div class="empty" style="margin-bottom:12px">No items claimed</div>` : ''}
+      ${!mineLines && !splitLines ? `
+        <div class="empty" style="margin-bottom:12px;padding:16px;text-align:center">
+          No items claimed yet — go back and tap Mine or Split on your items.
+        </div>` : ''}
 
       <hr class="divider" style="margin:0 0 10px">
       <div class="receipt-subs">
@@ -1994,6 +2001,7 @@ function doneClaming() {
         <span class="rt-label">TOTAL DUE</span>
         <span class="rt-amount" style="color:var(--green)">${fmt(totalWithTT)}</span>
       </div>
+      ${itemCount > 0 ? `
       <div class="pay-btns" style="margin-top:14px">
         <a href="${venmoUrl}" class="pay-btn pay-venmo" onclick="handleVenmo(event,'${amount}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 2c.6 2.1.9 4.3.9 6.7 0 6.7-5.7 15.3-10.4 15.3-2.5 0-3.8-2.1-5.4-8.4L3 11.4c1.5-1.2 3.1-2.5 3.1-4.5 0-1.4-.8-2.2-1.8-2.2-1.6 0-3.3 1.9-3.3 5.1 0 1.8.4 3.1.4 3.1L-.3 15C-1.1 12.1-1.5 9.5-1.5 7.2-1.5 3 1.1 1 3.8 1c3.1 0 5 2.5 5 5.4 0 2.6-1.5 4.3-2.5 5.7 1 4 2.1 6.1 3.3 6.1 2.4 0 6.7-8.3 6.7-12.5 0-1.7-.3-3.1-.9-4.2L19.4 2z"/></svg>
@@ -2003,13 +2011,12 @@ function doneClaming() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L3 14h9l-1.5 8L21 10h-9z"/></svg>
           Zelle
         </a>
-      </div>
+      </div>` : ''}
       <p style="font-size:11px;color:var(--ink3);text-align:center;margin-top:14px;font-family:'Courier Prime',monospace">
         Your selections have been saved ✓
       </p>
     </div>`;
 
-  // Set modal title + session name
   document.getElementById('done-modal-title').textContent = `${claimerName}'s Total`;
   document.getElementById('done-modal-session').textContent = claimState.sessionName || '';
   document.getElementById('done-modal-body').innerHTML = body;
