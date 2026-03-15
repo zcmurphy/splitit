@@ -225,6 +225,16 @@ input::placeholder { color: var(--ink4); }
   border: 1.5px solid; cursor: pointer; transition: all 0.1s; opacity: 0.3;
 }
 .ac.on { opacity: 1; }
+.claim-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'Courier Prime', monospace; font-size: 10px;
+  padding: 2px 8px; border-radius: 10px; font-weight: 700;
+  letter-spacing: 0.3px; white-space: nowrap;
+}
+.claim-badge-mine { background: rgba(184,114,10,0.12); color: var(--amber); border: 1px solid rgba(184,114,10,0.25); }
+.claim-badge-split { background: rgba(42,138,110,0.1); color: #2a8a6e; border: 1px solid rgba(42,138,110,0.25); }
+.item-row.claimed-row { background: rgba(184,114,10,0.04); border-color: rgba(184,114,10,0.15); }
+.item-row.split-row { background: rgba(42,138,110,0.04); border-color: rgba(42,138,110,0.15); }
 
 /* ── SETTINGS ── */
 .settings-grid {
@@ -1244,20 +1254,38 @@ function renderAssignList() {
   if (!state.items.length) {
     list.innerHTML = '<div class="empty">No items yet. Go back and add items first.</div>'; return;
   }
+  const claims = state.claims || {};
+  const partyCount = state.parties.length || 1;
   list.innerHTML = '';
   state.items.forEach(item => {
+    const claim = claims[String(item.id)];
+    const isMine = claim && claim !== '__split__';
+    const isSplit = claim === '__split__';
+
+    // Build claim badge
+    let claimBadge = '';
+    if (isMine) {
+      claimBadge = `<span class="claim-badge claim-badge-mine">✓ ${esc(claim)}</span>`;
+    } else if (isSplit) {
+      claimBadge = `<span class="claim-badge claim-badge-split">÷ Split ×${partyCount}</span>`;
+    }
+
     const row = document.createElement('div');
-    row.className = 'item-row';
+    row.className = 'item-row' + (isMine ? ' claimed-row' : isSplit ? ' split-row' : '');
+
     const chipsHtml = state.parties.length
       ? state.parties.map(p => {
-          const on = item.assignees.includes(p.id) ? 'on' : '';
+          const on = item.assignees.findIndex(a => String(a) === String(p.id)) !== -1 ? 'on' : '';
           return `<span class="ac ${p.color} ${on}" data-item-id="${item.id}" data-party-id="${p.id}" onclick="toggleAssign(this)">${esc(p.name)}</span>`;
         }).join('')
       : '<span style="font-size:11px;color:var(--text3)">Add parties first</span>';
+
     row.innerHTML = `
-      <div class="item-row-name">${esc(item.name)}</div>
-      <div class="item-row-price">${fmt(item.price)}</div>
-      <div class="assign-chips">${chipsHtml}</div>
+      <div style="flex:1;min-width:0">
+        <div class="item-row-name">${esc(item.name)}${claimBadge ? '&nbsp;&nbsp;' + claimBadge : ''}</div>
+        <div class="assign-chips" style="margin-top:6px">${chipsHtml}</div>
+      </div>
+      <div class="item-row-price" style="align-self:flex-start;padding-top:2px">${fmt(item.price)}</div>
     `;
     list.appendChild(row);
   });
