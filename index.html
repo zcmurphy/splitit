@@ -378,6 +378,7 @@ input::placeholder { color: var(--ink4); }
 
 /* Mobile */
 @media(max-width:560px){ .tabs .tab { font-size: 10px; padding: 8px 3px; } .receipts-grid { grid-template-columns: 1fr; } }
+@media(max-width:600px){ #verify-body { grid-template-columns: 1fr !important; } #verify-image { max-height: 40vh !important; } }
 </style>
 </head>
 <body>
@@ -503,11 +504,16 @@ input::placeholder { color: var(--ink4); }
       </div>
     </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px">
       <button class="btn btn-outline btn-sm" onclick="loadDemoData()" style="color:var(--ink3);border-style:dashed">
         🎲 Load demo data
       </button>
-      <button class="btn btn-green" onclick="goStep(1)">Next: Add Parties →</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="verify-btn" onclick="openVerifyModal()" class="btn btn-outline btn-sm" style="display:none">
+          🔍 Verify Receipt
+        </button>
+        <button class="btn btn-green" onclick="goStep(1)">Next: Add Parties →</button>
+      </div>
     </div>
   </div>
 
@@ -1114,6 +1120,7 @@ Rules for meta:
     renderItems();
     updateTaxTipCalc();
     updateOCRTotalsCheck();
+    document.getElementById('verify-btn').style.display = '';
   } catch(e) {
     status.className = 'ocr-status';
     status.textContent = '';
@@ -2080,6 +2087,7 @@ function confirmNewSession() {
   document.getElementById('ocr-status').className = 'ocr-status';
   document.getElementById('ocr-err').style.display = 'none';
   document.getElementById('ocr-btn').style.display = 'none';
+  document.getElementById('verify-btn').style.display = 'none';
   document.getElementById('file-input').value = '';
   document.getElementById('camera-input').value = '';
 
@@ -2117,6 +2125,82 @@ function confirmNewSession() {
   goStep(0);
   try { window.history.replaceState(null, '', location.pathname); } catch(e) {}
 }
+
+function closeVerifyModal() {
+  document.getElementById('verify-modal').style.display = 'none';
+}
+
+function openVerifyModal() {
+  const modal = document.getElementById('verify-modal');
+  modal.style.display = 'flex';
+
+  // Set image
+  const previewSrc = document.getElementById('ocr-preview').src;
+  const img = document.getElementById('verify-image');
+  const placeholder = document.getElementById('verify-img-placeholder');
+  if (previewSrc && !previewSrc.endsWith('index.html')) {
+    img.src = previewSrc;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+  }
+
+  // Build item list
+  const list = document.getElementById('verify-items-list');
+  const count = document.getElementById('verify-item-count');
+  count.textContent = `${state.items.length} item${state.items.length !== 1 ? 's' : ''}`;
+
+  if (!state.items.length) {
+    list.innerHTML = '<div class="empty" style="padding:32px">No items extracted yet.</div>';
+  } else {
+    // Distribute items evenly across the image height so they roughly line up
+    list.innerHTML = state.items.map((item, i) => {
+      const isEven = i % 2 === 0;
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;
+          padding:9px 16px;border-bottom:1px solid var(--border);
+          background:${isEven ? 'var(--surface)' : 'var(--surface2)'}">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+            <span style="font-size:10px;font-weight:700;color:var(--ink4);min-width:18px;text-align:right">${i + 1}</span>
+            <span style="font-size:13px;color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(item.name)}</span>
+          </div>
+          <span style="font-size:13px;font-weight:700;color:var(--brown);font-variant-numeric:tabular-nums;margin-left:12px;flex-shrink:0">${fmt(item.price)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // Totals footer
+  const subtotal = state.items.reduce((a, b) => a + b.price, 0);
+  const receiptSubtotal = state.meta && state.meta.subtotal != null ? state.meta.subtotal : null;
+  const receiptTotal = state.meta && state.meta.total != null ? state.meta.total : null;
+  const diff = receiptSubtotal != null ? subtotal - receiptSubtotal : null;
+  const diffColor = diff === null ? 'var(--ink3)' : Math.abs(diff) < 0.02 ? 'var(--green)' : 'var(--red)';
+  const diffLabel = diff === null ? '' : Math.abs(diff) < 0.02
+    ? '✓ matches receipt'
+    : diff < 0 ? `${fmt(Math.abs(diff))} missing` : `${fmt(Math.abs(diff))} over`;
+
+  document.getElementById('verify-totals').innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin-bottom:6px">
+      <span>Items Sum</span>
+      <span style="font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums">${fmt(subtotal)}</span>
+    </div>
+    ${receiptSubtotal != null ? `
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin-bottom:6px">
+      <span>Receipt Subtotal</span>
+      <span style="font-variant-numeric:tabular-nums">${fmt(receiptSubtotal)}</span>
+    </div>` : ''}
+    ${receiptTotal != null ? `
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink3);margin-bottom:8px">
+      <span>Receipt Total</span>
+      <span style="font-variant-numeric:tabular-nums">${fmt(receiptTotal)}</span>
+    </div>` : ''}
+    ${diffLabel ? `
+    <div style="font-size:11px;font-weight:700;color:${diffColor};text-align:right">${diffLabel}</div>` : ''}
+  `;
+}
+
 
 function closeDoneModal() {
   document.getElementById('done-modal-overlay').style.display = 'none';
@@ -2267,6 +2351,53 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('claimer-name')?.addEventListener('keydown', e => { if (e.key==='Enter') setClaimer(); });
 });
 </script>
+<!-- ══════════ RECEIPT VERIFY MODAL ══════════ -->
+<div id="verify-modal" onclick="if(event.target===this)closeVerifyModal()" style="display:none;position:fixed;inset:0;background:rgba(26,26,24,0.6);z-index:2000;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:var(--surface);border-radius:var(--r3);width:100%;max-width:900px;box-shadow:var(--shadow-md);overflow:hidden;margin:auto">
+
+    <!-- Header -->
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--ink)">Verify Receipt</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">Check that extracted items match the receipt</div>
+      </div>
+      <button onclick="closeVerifyModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink3);line-height:1;padding:0 4px">×</button>
+    </div>
+
+    <!-- Body: image left, items right -->
+    <div id="verify-body" style="display:grid;grid-template-columns:1fr 1fr;min-height:400px">
+
+      <!-- Left: receipt image -->
+      <div style="border-right:1px solid var(--border);position:relative;background:#1a1a18;display:flex;align-items:flex-start;justify-content:center;overflow:hidden">
+        <img id="verify-image" src="" style="width:100%;height:100%;object-fit:contain;object-position:top;max-height:80vh">
+        <div id="verify-img-placeholder" style="display:none;color:rgba(255,255,255,0.3);font-size:13px;padding:40px;text-align:center;align-self:center">
+          No image uploaded
+        </div>
+      </div>
+
+      <!-- Right: extracted items list -->
+      <div style="overflow-y:auto;max-height:80vh">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3)">Extracted Items</span>
+          <span id="verify-item-count" style="font-size:11px;color:var(--ink4)"></span>
+        </div>
+        <div id="verify-items-list" style="padding:8px 0"></div>
+
+        <!-- Totals footer -->
+        <div id="verify-totals" style="border-top:1px solid var(--border);padding:12px 16px;background:var(--surface2)"></div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2)">
+      <button onclick="closeVerifyModal()" class="btn btn-outline">Close</button>
+      <button onclick="closeVerifyModal();goStep(1)" class="btn btn-green">Looks good → Add Parties</button>
+    </div>
+
+  </div>
+</div>
+
 <!-- ══════════ NEW SESSION CONFIRM MODAL ══════════ -->
 <div id="new-session-modal" style="display:none;position:fixed;inset:0;background:rgba(26,26,24,0.5);z-index:2000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeNewSessionModal()">
   <div style="background:var(--surface);border-radius:var(--r3);width:100%;max-width:380px;box-shadow:var(--shadow-md);overflow:hidden">
