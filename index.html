@@ -393,7 +393,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster</div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v41d323fc</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -553,11 +553,11 @@ input::placeholder { color: var(--ink4); }
           <div class="setting">
             <label>Tax Rate</label>
             <div class="pct-row">
-              <input type="number" id="tax" value="9" min="0" max="30" step="0.1" oninput="updateTaxTipCalc()">
+              <input type="number" id="tax" value="9" min="0" max="30" step="0.01" oninput="updateTaxTipCalc()">
               <span class="pct-lbl">%</span>
             </div>
-            <div id="tax-ocr-note" style="display:none;font-family:'Courier Prime',monospace;font-size:10px;color:var(--green);margin-top:5px">✓ From receipt</div>
-            <div id="calc-tax-amt" style="font-family:'Courier Prime',monospace;font-size:13px;font-weight:700;color:var(--ink2);margin-top:8px">$0.00</div>
+            <div id="tax-ocr-note" style="display:none;font-size:10px;color:var(--green);margin-top:5px">✓ From receipt</div>
+            <div id="calc-tax-amt" style="font-size:13px;font-weight:700;color:var(--ink2);margin-top:8px">$0.00</div>
           </div>
 
           <!-- Tip column -->
@@ -573,30 +573,57 @@ input::placeholder { color: var(--ink4); }
               <button class="btn btn-outline tip-preset" onclick="setTip(20)">20%</button>
               <button class="btn btn-outline tip-preset" onclick="setTip(22)">22%</button>
             </div>
-            <div id="calc-tip-amt" style="font-family:'Courier Prime',monospace;font-size:13px;font-weight:700;color:var(--ink2);margin-top:8px">$0.00</div>
+            <div id="calc-tip-amt" style="font-size:13px;font-weight:700;color:var(--ink2);margin-top:8px">$0.00</div>
           </div>
 
           <!-- Totals column -->
           <div class="setting">
             <label>Total</label>
-            <div style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:10px 12px">
-              <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:5px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px">
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:5px">
                 <span>Subtotal</span><span id="calc-subtotal">$0.00</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:5px">
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:5px">
                 <span>Tax</span><span id="calc-tax-line">$0.00</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:8px">
+              <div id="calc-misc-row" style="display:none;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:5px">
+                <span id="calc-misc-label">Misc</span><span id="calc-misc-line">$0.00</span>
+              </div>
+              <div id="calc-autograt-row" style="display:none;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:5px">
+                <span id="calc-autograt-label">Auto Gratuity</span><span id="calc-autograt-line">$0.00</span>
+              </div>
+              <div id="calc-tip-row" style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:8px">
                 <span>Tip</span><span id="calc-tip-line">$0.00</span>
               </div>
               <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border2);padding-top:7px">
-                <span style="font-family:'Courier Prime',monospace;font-size:11px;font-weight:700;color:var(--ink);letter-spacing:1px">TOTAL</span>
-                <span id="calc-total" style="font-family:'Courier Prime',monospace;font-size:14px;font-weight:700;color:var(--brown)">$0.00</span>
+                <span style="font-size:11px;font-weight:700;color:var(--ink);letter-spacing:0.5px">TOTAL</span>
+                <span id="calc-total" style="font-size:14px;font-weight:700;color:var(--brown)">$0.00</span>
               </div>
             </div>
           </div>
 
         </div>
+
+        <!-- Misc charges row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div class="setting">
+            <label>Misc Charges <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink4)">(service fee, surcharge…)</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="color:var(--ink3);font-size:14px">$</span>
+              <input type="number" id="misc" value="0" min="0" step="0.01" oninput="updateTaxTipCalc()" style="max-width:120px">
+            </div>
+            <div id="misc-ocr-note" style="display:none;font-size:10px;color:var(--green);margin-top:5px">✓ From receipt</div>
+          </div>
+          <div class="setting">
+            <label>Auto-Gratuity <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink4)">(already added by restaurant)</span></label>
+            <div class="pct-row">
+              <input type="number" id="auto-gratuity" value="0" min="0" max="100" step="0.1" oninput="updateTaxTipCalc()">
+              <span class="pct-lbl">%</span>
+            </div>
+            <div id="autograt-ocr-note" style="display:none;font-size:10px;color:var(--brown);margin-top:5px">⚠️ Already on bill — tip set to 0%</div>
+          </div>
+        </div>
+
       </div>
     </div>
     <!-- Assign items -->
@@ -773,10 +800,12 @@ let state = {
   parties: [],     // {id, name, color}
   tax: 9,
   tip: 18,
+  misc: 0,         // flat misc charge (split evenly)
+  autoGratuity: 0, // auto-gratuity already on the bill (replaces tip)
   sessionId: null,
-  sessionName: null, // human-readable session name
-  claims: {},      // {itemId: claimerName}
-  meta: null,      // {establishment, address, phone, date, time}
+  sessionName: null,
+  claims: {},
+  meta: null,
 };
 let colorIdx = 0;
 let currentStep = 0;
@@ -1034,6 +1063,10 @@ Format:
     "time": "Time as printed e.g. 7:42 PM or null",
     "subtotal": 92.50,
     "tax": 8.33,
+    "misc": 3.50,
+    "misc_label": "Service Charge",
+    "auto_gratuity": 18.50,
+    "auto_gratuity_pct": 18,
     "total": 100.83
   },
   "items": [
@@ -1045,13 +1078,17 @@ Rules for items:
 - Include all food, drink, and appetizer line items
 - If a line shows a quantity greater than 1 (e.g. "2 Margarita 18.00" or "Burger x3 $36.00"), expand it into that many SEPARATE identical entries each at the per-unit price. For example "2 Margarita 18.00" becomes two entries: {"name": "Margarita", "price": 9.00} and {"name": "Margarita", "price": 9.00}
 - If the line price is the total for the quantity, divide by quantity to get per-unit price
-- Do NOT include tax, tip, subtotal, total, service charges, or fees as items
+- Do NOT include tax, tip, gratuity, subtotal, total, service charges, or fees as items
 - price must be a number (no dollar sign)
 - name should be clean and readable, without the quantity prefix
 
 Rules for meta:
 - Use null for any field you cannot find or read
 - subtotal, tax, total must be numbers (no dollar sign), or null if not found
+- misc: any extra charge added to the bill that is NOT tax or tip (e.g. "Service Charge", "Delivery Fee", "Resort Fee", "Surcharge"). Use null if none found
+- misc_label: the printed label for the misc charge, or null
+- auto_gratuity: dollar amount of any gratuity/tip already added by the restaurant (e.g. "Auto Gratuity 18%", "Mandatory Gratuity", "Service Included"). Use null if none found
+- auto_gratuity_pct: the percentage of the auto gratuity if printed (e.g. 18), or null
 - Do not guess — only include what is clearly printed on the receipt`
             }
           ]
@@ -1098,17 +1135,42 @@ Rules for meta:
 
       // Calculate tax % BEFORE renderMeta so it shows correctly in Receipt Details
       if (meta.tax != null && meta.subtotal != null && meta.subtotal > 0) {
-        const taxPct = parseFloat((meta.tax / meta.subtotal * 100).toFixed(1));
+        const taxPct = parseFloat((meta.tax / meta.subtotal * 100).toFixed(2));
         document.getElementById('tax').value = taxPct;
         state.tax = taxPct;
         document.getElementById('tax-ocr-note').style.display = 'block';
       } else if (meta.tax != null && itemsArr.length > 0) {
         const itemsSubtotal = itemsArr.reduce((a, b) => a + parseFloat(b.price || 0), 0);
         if (itemsSubtotal > 0) {
-          const taxPct = parseFloat((meta.tax / itemsSubtotal * 100).toFixed(1));
+          const taxPct = parseFloat((meta.tax / itemsSubtotal * 100).toFixed(2));
           document.getElementById('tax').value = taxPct;
           state.tax = taxPct;
           document.getElementById('tax-ocr-note').style.display = 'block';
+        }
+      }
+
+      // Auto-populate misc charge
+      if (meta.misc != null && meta.misc > 0) {
+        document.getElementById('misc').value = meta.misc.toFixed(2);
+        state.misc = meta.misc;
+        document.getElementById('misc-ocr-note').style.display = 'block';
+      }
+
+      // Auto-populate auto-gratuity — use pct if available, else derive from amount
+      if (meta.auto_gratuity_pct != null && meta.auto_gratuity_pct > 0) {
+        document.getElementById('auto-gratuity').value = meta.auto_gratuity_pct;
+        state.autoGratuity = meta.auto_gratuity_pct;
+        document.getElementById('tip').value = 0;
+        document.getElementById('autograt-ocr-note').style.display = 'block';
+      } else if (meta.auto_gratuity != null && meta.auto_gratuity > 0) {
+        // Derive pct from amount / subtotal
+        const base = meta.subtotal || itemsArr.reduce((a,b) => a + parseFloat(b.price||0), 0);
+        if (base > 0) {
+          const pct = parseFloat((meta.auto_gratuity / base * 100).toFixed(2));
+          document.getElementById('auto-gratuity').value = pct;
+          state.autoGratuity = pct;
+          document.getElementById('tip').value = 0;
+          document.getElementById('autograt-ocr-note').style.display = 'block';
         }
       }
 
@@ -1138,6 +1200,10 @@ function renderMeta() {
   const m = state.meta;
   if (!m) { document.getElementById('meta-card').style.display = 'none'; return; }
   document.getElementById('meta-card').style.display = 'block';
+  const taxPctDisplay = state.tax != null ? ` (${parseFloat(parseFloat(state.tax).toFixed(2))}%)` : '';
+  const autoGratDisplay = m.auto_gratuity_pct != null
+    ? ` (${m.auto_gratuity_pct}%)`
+    : (state.autoGratuity ? ` (${parseFloat(state.autoGratuity.toFixed(2))}%)` : '');
   const fields = [
     { icon: '🍽️', label: 'Establishment', val: m.establishment },
     { icon: '📍', label: 'Address',        val: m.address },
@@ -1145,17 +1211,18 @@ function renderMeta() {
     { icon: '📅', label: 'Date',           val: m.date },
     { icon: '🕐', label: 'Time',           val: m.time },
     { icon: '🧾', label: 'Subtotal',       val: m.subtotal != null ? fmt(m.subtotal) : null },
-    { icon: '🏛️', label: 'Tax',            val: m.tax != null ? fmt(m.tax) + (state.tax != null ? ` (${parseFloat(parseFloat(state.tax).toFixed(1))}%)` : '') : null },
+    { icon: '🏛️', label: 'Tax',            val: m.tax != null ? fmt(m.tax) + taxPctDisplay : null },
+    { icon: '🔧', label: m.misc_label || 'Misc', val: m.misc != null && m.misc > 0 ? fmt(m.misc) : null },
+    { icon: '🤝', label: 'Auto Gratuity', val: m.auto_gratuity != null && m.auto_gratuity > 0 ? fmt(m.auto_gratuity) + autoGratDisplay : null },
     { icon: '💰', label: 'Total',          val: m.total != null ? fmt(m.total) : null },
   ].filter(f => f.val);
   document.getElementById('meta-fields').innerHTML = fields.map(f =>
     `<div class="meta-field">
       <span class="meta-icon">${f.icon}</span>
-      <span class="meta-label">${f.label}</span>
+      <span class="meta-label">${esc(f.label)}</span>
       <span class="meta-val">${esc(f.val)}</span>
     </div>`
   ).join('');
-  // Upgrade session name now that we have restaurant info
   state.sessionName = generateSessionName(m);
   updateSessionNameDisplay();
 }
@@ -1379,19 +1446,58 @@ function updateOCRTotalsCheck() {
 }
 
 function updateTaxTipCalc() {
-  const subtotal = state.items.reduce((a, b) => a + b.price, 0);
-  const tax = parseFloat(document.getElementById('tax').value) || 0;
-  const tip = parseFloat(document.getElementById('tip').value) || 0;
-  const taxAmt = subtotal * tax / 100;
-  const tipAmt = subtotal * tip / 100;
-  const total = subtotal + taxAmt + tipAmt;
+  const subtotal   = state.items.reduce((a, b) => a + b.price, 0);
+  const tax        = parseFloat(document.getElementById('tax').value) || 0;
+  const misc       = parseFloat(document.getElementById('misc').value) || 0;
+  const autoGrat   = parseFloat(document.getElementById('auto-gratuity').value) || 0;
+  const taxAmt     = subtotal * tax / 100;
+  const autoGratAmt = subtotal * autoGrat / 100;
 
-  document.getElementById('calc-subtotal').textContent = fmt(subtotal);
-  document.getElementById('calc-tax-amt').textContent = fmt(taxAmt);
-  document.getElementById('calc-tax-line').textContent = fmt(taxAmt);
-  document.getElementById('calc-tip-amt').textContent = fmt(tipAmt);
-  document.getElementById('calc-tip-line').textContent = fmt(tipAmt);
-  document.getElementById('calc-total').textContent = fmt(total);
+  // If auto-gratuity is set, tip is already included — warn and zero out manual tip
+  const hasAutoGrat = autoGrat > 0;
+  const tipEl = document.getElementById('tip');
+  const tipRow = document.getElementById('calc-tip-row');
+  if (hasAutoGrat) {
+    tipEl.value = 0;
+    tipEl.disabled = true;
+    tipRow.style.display = 'none';
+  } else {
+    tipEl.disabled = false;
+    tipRow.style.display = 'flex';
+  }
+  const tip    = hasAutoGrat ? 0 : (parseFloat(tipEl.value) || 0);
+  const tipAmt = subtotal * tip / 100;
+
+  const total  = subtotal + taxAmt + misc + autoGratAmt + tipAmt;
+
+  document.getElementById('calc-subtotal').textContent    = fmt(subtotal);
+  document.getElementById('calc-tax-amt').textContent     = fmt(taxAmt);
+  document.getElementById('calc-tax-line').textContent    = fmt(taxAmt);
+  document.getElementById('calc-tip-amt').textContent     = fmt(tipAmt);
+  document.getElementById('calc-tip-line').textContent    = fmt(tipAmt);
+  document.getElementById('calc-total').textContent       = fmt(total);
+
+  // Misc row
+  const miscRow = document.getElementById('calc-misc-row');
+  if (misc > 0) {
+    miscRow.style.display = 'flex';
+    document.getElementById('calc-misc-line').textContent = fmt(misc);
+    const label = state.meta && state.meta.misc_label ? state.meta.misc_label : 'Misc';
+    document.getElementById('calc-misc-label').textContent = label;
+  } else {
+    miscRow.style.display = 'none';
+  }
+
+  // Auto-gratuity row
+  const autoRow = document.getElementById('calc-autograt-row');
+  if (hasAutoGrat) {
+    autoRow.style.display = 'flex';
+    document.getElementById('calc-autograt-line').textContent = fmt(autoGratAmt);
+    const pct = autoGrat % 1 === 0 ? autoGrat : autoGrat.toFixed(1);
+    document.getElementById('calc-autograt-label').textContent = `Auto Gratuity (${pct}%)`;
+  } else {
+    autoRow.style.display = 'none';
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1429,6 +1535,8 @@ async function generateLink() {
     parties: state.parties,
     tax: parseFloat(document.getElementById('tax').value) || 9,
     tip: parseFloat(document.getElementById('tip').value) || 18,
+    misc: parseFloat(document.getElementById('misc').value) || 0,
+    autoGratuity: parseFloat(document.getElementById('auto-gratuity').value) || 0,
     claims: state.claims,
     sessionId: state.sessionId,
     sessionName: state.sessionName,
@@ -1496,8 +1604,11 @@ function openQR() {
 // CALCULATE & RESULTS
 // ══════════════════════════════════════════
 function recalculate() {
-  const tax = parseFloat(document.getElementById('tax').value) || 0;
-  const tip = parseFloat(document.getElementById('tip').value) || 0;
+  const tax      = parseFloat(document.getElementById('tax').value) || 0;
+  const tip      = parseFloat(document.getElementById('tip').value) || 0;
+  const misc     = parseFloat(document.getElementById('misc').value) || 0;
+  const autoGrat = parseFloat(document.getElementById('auto-gratuity').value) || 0;
+  const effectiveTip = autoGrat > 0 ? autoGrat : tip;
   if (!state.parties.length || !state.items.length) {
     document.getElementById('receipts-grid').innerHTML = '<div class="empty">Add parties and items first.</div>';
     return;
@@ -1602,10 +1713,11 @@ function recalculate() {
   document.getElementById('results-stats').style.display = 'grid';
 
   state.parties.forEach((party, idx) => {
-    const sub = subs[party.id] || 0;
-    const taxAmt = sub * tax / 100;
-    const tipAmt = sub * tip / 100;
-    const total = sub + taxAmt + tipAmt;
+    const sub         = subs[party.id] || 0;
+    const taxAmt      = sub * tax / 100;
+    const tipAmt      = sub * effectiveTip / 100;
+    const miscShare   = partyCount > 0 ? misc / partyCount : 0;
+    const total       = sub + taxAmt + tipAmt + miscShare;
     grand += total;
 
     const lines = partyItemMap[party.id] || [];
@@ -1615,6 +1727,11 @@ function recalculate() {
         ${splitBy > 1 ? `<span class="r-split">÷${splitBy}</span>` : ''}
         <span class="r-price">${fmt(share)}</span>
       </div>`).join('');
+
+    const tipLabel = autoGrat > 0 ? `Auto Gratuity (${autoGrat}%)` : `Tip (${tip}%)`;
+    const miscLine = misc > 0
+      ? `<div class="r-sub"><span>${state.meta && state.meta.misc_label ? esc(state.meta.misc_label) : 'Misc'} (÷${partyCount})</span><span>${fmt(miscShare)}</span></div>`
+      : '';
 
     const card = document.createElement('div');
     card.className = 'receipt-card';
@@ -1633,7 +1750,8 @@ function recalculate() {
       <div class="receipt-subs">
         <div class="r-sub"><span>Subtotal</span><span>${fmt(sub)}</span></div>
         <div class="r-sub"><span>Tax (${tax}%)</span><span>${fmt(taxAmt)}</span></div>
-        <div class="r-sub"><span>Tip (${tip}%)</span><span>${fmt(tipAmt)}</span></div>
+        ${miscLine}
+        <div class="r-sub"><span>${tipLabel}</span><span>${fmt(tipAmt)}</span></div>
       </div>
       <div class="receipt-total">
         <span class="rt-label">TOTAL DUE</span>
@@ -1810,6 +1928,8 @@ async function resumeSession(id) {
       parties: data.parties || [],
       tax: data.tax || 9,
       tip: data.tip || 18,
+      misc: data.misc || 0,
+      autoGratuity: data.autoGratuity || 0,
       claims: data.claims || {},
       sessionId: data.sessionId,
       sessionName: data.sessionName,
@@ -1818,9 +1938,10 @@ async function resumeSession(id) {
     colorIdx = state.parties.length;
     renderAll();
     if (state.meta) renderMeta();
-    // Update tax/tip inputs
     document.getElementById('tax').value = state.tax;
     document.getElementById('tip').value = state.tip;
+    document.getElementById('misc').value = state.misc || 0;
+    document.getElementById('auto-gratuity').value = state.autoGratuity || 0;
     goStep(4);
     recalculate();
     startLiveSync();
@@ -2095,13 +2216,18 @@ function confirmNewSession() {
   document.getElementById('meta-card').style.display = 'none';
   document.getElementById('meta-fields').innerHTML = '';
   document.getElementById('tax-ocr-note').style.display = 'none';
+  document.getElementById('misc-ocr-note').style.display = 'none';
+  document.getElementById('autograt-ocr-note').style.display = 'none';
   document.getElementById('ocr-totals-check').style.display = 'none';
   document.getElementById('ocr-receipt-total').textContent = '—';
   document.getElementById('ocr-items-sum').textContent = '—';
 
-  // ── Reset tax/tip ────────────────────────────────────
+  // ── Reset tax/tip/misc/auto-gratuity ─────────────────
   document.getElementById('tax').value = 9;
   document.getElementById('tip').value = 18;
+  document.getElementById('tip').disabled = false;
+  document.getElementById('misc').value = 0;
+  document.getElementById('auto-gratuity').value = 0;
   updateTaxTipCalc();
 
   // ── Reset share step ─────────────────────────────────
