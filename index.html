@@ -4,155 +4,152 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Split/It — Split smarter</title>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --parchment: #f7f2e9;
-  --parchment2: #ede6d6;
-  --parchment3: #e4dbc8;
-  --white: #ffffff;
-  --ink: #1c1712;
-  --ink2: #4a3f32;
-  --ink3: #8c7b68;
-  --ink4: #b8a898;
-  --amber: #b8720a;
-  --amber2: #d4891a;
-  --amber-pale: #fdf5e6;
-  --amber-border: rgba(184,114,10,0.25);
-  --red: #a33030;
-  --red-pale: rgba(163,48,48,0.08);
-  --green: #2e6b3e;
-  --rule: rgba(28,23,18,0.1);
-  --rule2: rgba(28,23,18,0.18);
-  --shadow: 0 2px 12px rgba(28,23,18,0.08);
-  --shadow-md: 0 4px 24px rgba(28,23,18,0.12);
-  --venmo: #3d95ce;
-  --zelle: #6c1cd1;
-  --r: 4px;
+  --bg:       #f2f2f0;
+  --surface:  #ffffff;
+  --surface2: #f7f7f5;
+  --surface3: #eeeeeb;
+  --border:   #e0e0db;
+  --border2:  #d0d0ca;
+  --ink:      #1a1a18;
+  --ink2:     #3d3d38;
+  --ink3:     #7a7a72;
+  --ink4:     #a8a89e;
+  --brown:    #8b6f47;
+  --brown2:   #a8895c;
+  --brown-bg: #f5f0e8;
+  --brown-border: rgba(139,111,71,0.2);
+  --green:    #2d6a4f;
+  --green-bg: rgba(45,106,79,0.08);
+  --red:      #c0392b;
+  --red-bg:   rgba(192,57,43,0.07);
+  --venmo:    #3d95ce;
+  --zelle:    #6c1cd1;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 2px 8px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09), 0 2px 6px rgba(0,0,0,0.05);
+  --r:   8px;
+  --r2: 12px;
+  --r3: 16px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--parchment2);
+  background: var(--bg);
   color: var(--ink);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-weight: 400;
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle paper texture */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 0;
-}
-
-.app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 16px 80px; }
+.app { position: relative; max-width: 680px; margin: 0 auto; padding: 0 16px 100px; }
 
 /* ── HEADER ── */
 header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 22px 0 20px;
-  border-bottom: 2px solid var(--ink);
-  margin-bottom: 32px;
+  padding: 24px 0 20px;
+  border-bottom: 1px solid var(--border2);
+  margin-bottom: 28px;
 }
 .wordmark { display: block; line-height: 1; }
 .wordmark svg { display: block; }
 .header-tag {
-  font-family: 'Courier Prime', monospace;
-  font-size: 10px; color: var(--ink3);
-  letter-spacing: 2.5px; text-transform: uppercase;
-  margin-top: 5px;
+  font-size: 10px; color: var(--ink4);
+  letter-spacing: 1.5px; text-transform: uppercase;
+  margin-top: 4px; font-weight: 500;
 }
 
 /* ── TABS ── */
 .tabs {
-  display: flex; gap: 0;
-  background: var(--white);
-  border: 1px solid var(--rule2);
-  border-radius: var(--r);
+  display: flex; gap: 2px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
   overflow: hidden;
-  margin-bottom: 24px;
-  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  padding: 3px;
 }
 .tab {
   flex: 1; text-align: center;
-  padding: 11px 8px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px; font-weight: 600;
+  padding: 9px 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500;
   cursor: pointer; border: none;
   background: transparent; color: var(--ink3);
   transition: all 0.18s;
-  border-right: 1px solid var(--rule);
+  border-radius: 9px;
 }
-.tab:last-child { border-right: none; }
-.tab.active { background: var(--ink); color: var(--parchment); }
+.tab.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); font-weight: 600; }
 .tab .tab-num {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 17px; height: 17px;
-  background: var(--parchment2); border-radius: 50%;
-  font-size: 10px; margin-right: 5px; color: var(--ink3);
+  width: 16px; height: 16px;
+  background: var(--border);
+  border-radius: 50%;
+  font-size: 9px; margin-right: 4px; color: var(--ink3);
   font-weight: 700;
 }
-.tab.active .tab-num { background: rgba(255,255,255,0.15); color: var(--parchment); }
+.tab.active .tab-num { background: var(--brown); color: white; }
 
 /* ── PANELS ── */
 .step { display: none; }
-.step.active { display: block; animation: fadeSlide 0.22s ease; }
-@keyframes fadeSlide { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+.step.active { display: block; animation: fadeSlide 0.2s ease; }
+@keyframes fadeSlide { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
 
+/* ── CARDS ── */
 .card {
-  background: var(--white);
-  border: 1px solid var(--rule2);
-  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
   overflow: hidden;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
 }
 .card-head {
-  padding: 12px 20px;
-  background: var(--parchment);
-  border-bottom: 1px solid var(--rule2);
+  padding: 13px 18px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
 .card-title {
-  font-family: 'Nunito', sans-serif;
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 1.5px; text-transform: uppercase;
-  color: var(--ink2);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--ink3);
 }
-.card-body { padding: 18px 20px; }
+.card-body { padding: 18px; }
 
 /* ── FORMS ── */
 .row { display: flex; gap: 8px; align-items: center; }
 .row + .row { margin-top: 10px; }
 input[type=text], input[type=number], input[type=email] {
-  background: var(--parchment);
-  border: 1px solid var(--rule2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 9px 13px;
-  font-family: 'Nunito', sans-serif;
+  padding: 9px 12px;
+  font-family: 'DM Sans', sans-serif;
   font-size: 14px; color: var(--ink);
   flex: 1; outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+  font-weight: 400;
 }
-input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-border); }
-input[type=number] { max-width: 100px; }
+input:focus { border-color: var(--brown); box-shadow: 0 0 0 3px var(--brown-border); background: var(--surface); }
+input[type=number] { max-width: 90px; }
 input::placeholder { color: var(--ink4); }
 
 .btn {
   border: none; border-radius: var(--r);
-  padding: 9px 18px;
-  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  padding: 9px 16px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
 }
-.btn-green { background: var(--ink); color: var(--parchment); }
+.btn-green { background: var(--ink); color: white; }
 .btn-green:hover { background: var(--ink2); }
-.btn-outline { background: transparent; color: var(--ink2); border: 1px solid var(--rule2); }
-.btn-outline:hover { background: var(--parchment); }
+.btn-outline { background: transparent; color: var(--ink2); border: 1px solid var(--border2); }
+.btn-outline:hover { background: var(--surface2); border-color: var(--border2); }
 .btn-ghost { background: transparent; color: var(--ink3); border: none; padding: 6px 10px; font-size: 12px; }
 .btn-ghost:hover { color: var(--red); }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
@@ -163,154 +160,128 @@ input::placeholder { color: var(--ink4); }
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 10px 5px 12px;
   border-radius: 20px; font-size: 12px; font-weight: 600;
-  border: 1.5px solid; cursor: default;
+  border: 1.5px solid;
 }
 .chip .x { background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.4; padding: 0; color: inherit; line-height: 1; }
 .chip .x:hover { opacity: 1; }
 
 /* ── OCR ZONE ── */
 .ocr-zone {
-  border: 2px dashed var(--ink4);
-  border-radius: var(--r);
-  padding: 32px 20px;
+  border: 2px dashed var(--border2);
+  border-radius: var(--r2);
+  padding: 36px 20px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
-  position: relative; overflow: hidden;
-  background: var(--parchment);
+  background: var(--surface2);
 }
-.ocr-zone:hover, .ocr-zone.drag-over {
-  border-color: var(--amber);
-  background: var(--amber-pale);
-}
+.ocr-zone:hover, .ocr-zone.drag-over { border-color: var(--brown); background: var(--brown-bg); }
 .ocr-icon { font-size: 36px; margin-bottom: 12px; }
-.ocr-label { font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--ink); }
+.ocr-label { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
 .ocr-sub { font-size: 13px; color: var(--ink3); }
 #file-input, #camera-input { display: none; }
-.ocr-preview {
-  max-width: 100%; max-height: 280px;
-  border-radius: 4px; margin-top: 12px;
-  display: none;
-}
+.ocr-preview { max-width: 100%; max-height: 280px; border-radius: var(--r); margin-top: 12px; display: none; }
 .ocr-actions { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
-.ocr-status {
-  margin-top: 12px;
-  font-family: 'Courier Prime', monospace;
-  font-size: 12px; color: var(--amber);
-  min-height: 20px;
-}
-.scanning-dots::after {
-  content: ''; animation: dots 1.2s infinite;
-}
+.ocr-status { margin-top: 12px; font-size: 12px; color: var(--brown); min-height: 20px; font-weight: 500; }
+.scanning-dots::after { content: ''; animation: dots 1.2s infinite; }
 @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
 
 /* ── ITEM LIST ── */
-.item-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.item-list { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
 .item-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 9px 12px;
-  background: var(--parchment); border-radius: var(--r);
-  border: 1px solid var(--rule);
-  animation: fadeIn 0.2s ease;
+  padding: 10px 12px;
+  background: var(--surface2); border-radius: var(--r);
+  border: 1px solid var(--border);
+  animation: fadeIn 0.18s ease;
 }
-@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
-.item-row-name { flex: 1; font-size: 14px; color: var(--ink2); }
-.item-row-price {
-  font-family: 'Courier Prime', monospace;
-  font-size: 13px; color: var(--amber); min-width: 65px; text-align: right;
-}
+@keyframes fadeIn { from{opacity:0;transform:translateY(-3px)} to{opacity:1;transform:translateY(0)} }
+.item-row-name { flex: 1; font-size: 14px; color: var(--ink2); font-weight: 400; }
+.item-row-price { font-size: 13px; color: var(--brown); min-width: 65px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .assign-chips { display: flex; flex-wrap: wrap; gap: 4px; flex: 1.5; }
 .ac {
-  font-size: 11px; padding: 3px 9px; border-radius: 12px;
-  border: 1.5px solid; cursor: pointer; transition: all 0.1s; opacity: 0.3;
+  font-size: 11px; padding: 3px 9px; border-radius: 20px;
+  border: 1.5px solid; cursor: pointer; transition: all 0.1s; opacity: 0.3; font-weight: 500;
 }
 .ac.on { opacity: 1; }
 .claim-badge {
   display: inline-flex; align-items: center; gap: 4px;
-  font-family: 'Courier Prime', monospace; font-size: 10px;
-  padding: 2px 8px; border-radius: 10px; font-weight: 700;
-  letter-spacing: 0.3px; white-space: nowrap;
+  font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 600;
+  letter-spacing: 0.2px; white-space: nowrap;
 }
-.claim-badge-mine { background: rgba(184,114,10,0.12); color: var(--amber); border: 1px solid rgba(184,114,10,0.25); }
-.claim-badge-split { background: rgba(42,138,110,0.1); color: #2a8a6e; border: 1px solid rgba(42,138,110,0.25); }
-.item-row.claimed-row { background: rgba(184,114,10,0.04); border-color: rgba(184,114,10,0.15); }
-.item-row.split-row { background: rgba(42,138,110,0.04); border-color: rgba(42,138,110,0.15); }
+.claim-badge-mine { background: rgba(139,111,71,0.1); color: var(--brown); border: 1px solid var(--brown-border); }
+.claim-badge-split { background: rgba(45,106,79,0.08); color: var(--green); border: 1px solid rgba(45,106,79,0.2); }
+.item-row.claimed-row { background: rgba(139,111,71,0.04); border-color: rgba(139,111,71,0.15); }
+.item-row.split-row { background: rgba(45,106,79,0.04); border-color: rgba(45,106,79,0.15); }
 
 /* ── SETTINGS ── */
-.settings-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-}
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media(max-width:480px) { .settings-grid { grid-template-columns: 1fr; } }
 .setting label {
-  display: block; font-family: 'Courier Prime', monospace;
-  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  display: block; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.5px; text-transform: uppercase;
   color: var(--ink3); margin-bottom: 8px;
 }
 .pct-row { display: flex; align-items: center; gap: 8px; }
-.pct-lbl { color: var(--ink2); font-size: 14px; }
-.tip-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.tip-preset { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.pct-lbl { color: var(--ink3); font-size: 14px; }
+.tip-presets { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.tip-preset { padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 
 /* ── SHARE ── */
 .link-box { display: flex; gap: 8px; align-items: center; }
 .link-display {
-  background: var(--parchment2); border: 1px solid var(--rule2);
-  border-radius: var(--r); padding: 10px 14px;
-  font-family: 'Courier Prime', monospace; font-size: 11px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 10px 13px;
+  font-size: 11px; font-family: monospace;
   color: var(--ink3); flex: 1; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; cursor: text;
+  text-overflow: ellipsis; white-space: nowrap;
 }
 .copied-badge {
   display: none; padding: 4px 10px;
-  background: rgba(46,107,62,0.1); color: var(--green);
-  border-radius: 20px; font-size: 11px; font-weight: 700;
+  background: var(--green-bg); color: var(--green);
+  border-radius: 20px; font-size: 11px; font-weight: 600;
 }
 
 /* ── RESULTS ── */
 .results-header {
-  text-align: center; margin-bottom: 28px; padding-bottom: 20px;
-  border-bottom: 2px solid var(--ink);
+  text-align: center; margin-bottom: 24px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border2);
 }
-.results-h { font-family: 'Nunito', sans-serif; font-size: 28px; font-weight: 700; color: var(--ink); }
-.results-h span { color: var(--amber); }
+.results-h { font-size: 26px; font-weight: 700; color: var(--ink); }
+.results-h span { color: var(--brown); }
 .results-sub { font-size: 13px; color: var(--ink3); margin-top: 4px; }
-
-.receipts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.receipts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
 .receipt-card {
-  background: var(--white); border: 1px solid var(--rule2);
-  border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow-md);
-  animation: slideUp 0.3s ease forwards; opacity: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); overflow: hidden; box-shadow: var(--shadow);
+  animation: slideUp 0.25s ease forwards; opacity: 0;
 }
-@keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
-.receipt-head {
-  padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
-}
-.receipt-name { font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700; color: var(--white); }
-.receipt-count { font-family: 'Courier Prime', monospace; font-size: 10px; background: rgba(0,0,0,0.18); color: rgba(255,255,255,0.8); padding: 3px 8px; border-radius: 10px; }
-.receipt-items { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; background: var(--white); }
+.receipt-head { padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; }
+.receipt-name { font-size: 14px; font-weight: 700; color: white; }
+.receipt-count { font-size: 10px; background: rgba(0,0,0,0.18); color: rgba(255,255,255,0.85); padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.receipt-items { padding: 12px 16px; display: flex; flex-direction: column; gap: 0; background: var(--surface); }
 .r-line {
   display: flex; justify-content: space-between; align-items: baseline;
-  padding: 5px 0; border-bottom: 1px dashed var(--rule); font-size: 13px; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; gap: 8px;
 }
 .r-line:last-child { border: none; }
 .r-name { color: var(--ink2); flex: 1; }
-.r-split { font-family: 'Courier Prime', monospace; font-size: 10px; color: var(--ink4); }
-.r-price { font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--ink); }
-.receipt-subs { padding: 6px 16px 8px; background: var(--parchment); border-top: 1px solid var(--rule); }
-.r-sub { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink3); padding: 2px 0; font-family: 'Courier Prime', monospace; }
+.r-split { font-size: 10px; color: var(--ink4); font-weight: 500; }
+.r-price { font-size: 13px; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.receipt-subs { padding: 8px 16px; background: var(--surface2); border-top: 1px solid var(--border); }
+.r-sub { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink3); padding: 3px 0; }
 .receipt-total {
-  padding: 12px 16px;
-  display: flex; justify-content: space-between; align-items: center;
-  border-top: 2px solid var(--rule2);
-  background: var(--amber-pale);
+  padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--border2); background: var(--brown-bg);
 }
-.rt-label { font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700; color: var(--ink3); letter-spacing: 1px; text-transform: uppercase; }
-.rt-amount { font-family: 'Courier Prime', monospace; font-size: 22px; color: var(--amber); font-weight: 700; }
-.pay-btns { padding: 10px 16px 14px; display: flex; gap: 8px; background: var(--white); }
+.rt-label { font-size: 11px; font-weight: 700; color: var(--ink3); letter-spacing: 0.8px; text-transform: uppercase; }
+.rt-amount { font-size: 22px; color: var(--brown); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pay-btns { padding: 10px 16px 14px; display: flex; gap: 8px; background: var(--surface); }
 .pay-btn {
   flex: 1; padding: 9px 10px; border-radius: var(--r);
-  border: none; cursor: pointer; font-family: 'Nunito', sans-serif;
+  border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
   font-size: 12px; font-weight: 700; transition: all 0.15s; text-decoration: none;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
@@ -320,131 +291,93 @@ input::placeholder { color: var(--ink4); }
 .pay-zelle:hover { filter: brightness(1.1); }
 
 .grand-bar {
-  margin-top: 24px; padding: 20px 24px;
-  background: var(--ink); border-radius: var(--r);
+  margin-top: 20px; padding: 18px 22px;
+  background: var(--ink); border-radius: var(--r2);
   display: flex; justify-content: space-between; align-items: center;
   box-shadow: var(--shadow-md);
 }
-.grand-label { font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 600; color: var(--parchment2); }
-.grand-amount { font-family: 'Courier Prime', monospace; font-size: 32px; color: var(--amber2); }
+.grand-label { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.6); }
+.grand-amount { font-size: 30px; color: var(--brown2); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── CLAIM VIEW ── */
 #claim-view { display: none; }
-.claim-header {
-  text-align: center; padding: 48px 20px 32px;
-  border-bottom: 2px solid var(--ink); margin-bottom: 28px;
-}
-.claim-title { font-family: 'Nunito', sans-serif; font-size: 30px; font-weight: 700; color: var(--ink); }
-.claim-title span { color: var(--amber); }
+.claim-header { text-align: center; padding: 44px 20px 28px; border-bottom: 1px solid var(--border2); margin-bottom: 24px; }
+.claim-title { font-size: 28px; font-weight: 700; color: var(--ink); }
+.claim-title span { color: var(--brown); }
 .claim-sub { font-size: 14px; color: var(--ink3); margin-top: 6px; }
-
-.claim-name-row {
-  background: var(--white); border: 1px solid var(--rule2); border-radius: var(--r);
-  padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow);
-}
-.claim-name-label { font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--ink); }
-.claim-items-grid { display: flex; flex-direction: column; gap: 8px; }
+.claim-name-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+.claim-name-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--ink); }
+.claim-items-grid { display: flex; flex-direction: column; gap: 6px; }
 .claim-item {
   display: flex; align-items: center; justify-content: space-between;
-  background: var(--white); border: 1.5px solid var(--rule2);
-  border-radius: var(--r); padding: 14px 16px; cursor: pointer; transition: all 0.15s;
-  box-shadow: var(--shadow);
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px; transition: all 0.15s;
+  box-shadow: var(--shadow-sm);
 }
-.claim-item:hover { border-color: var(--amber); background: var(--amber-pale); }
-.claim-item.claimed-me { border-color: var(--amber); background: var(--amber-pale); }
-.claim-item.claimed-other { opacity: 0.45; cursor: not-allowed; }
-.claim-item.claimed-split { border-color: #2a8a6e; background: rgba(42,138,110,.08); }
-.ci-claim-btns { display: flex; gap: 6px; margin-top: 8px; }
+.claim-item:hover { border-color: var(--brown); }
+.claim-item.claimed-me { border-color: var(--brown); background: var(--brown-bg); }
+.claim-item.claimed-other { opacity: 0.4; cursor: not-allowed; }
+.claim-item.claimed-split { border-color: var(--green); background: var(--green-bg); }
+.ci-claim-btns { display: flex; gap: 5px; margin-top: 8px; }
 .ci-claim-btn {
-  flex: 1; padding: 6px 4px; font-size: 11px; font-weight: 700;
-  border: 1.5px solid rgba(28,23,18,0.15); border-radius: 5px;
-  background: white; cursor: pointer; color: var(--ink2);
-  font-family: 'Nunito', sans-serif; letter-spacing: 0.3px;
-  transition: all 0.12s;
+  flex: 1; padding: 6px 4px; font-size: 11px; font-weight: 600;
+  border: 1.5px solid var(--border2); border-radius: 6px;
+  background: var(--surface); cursor: pointer; color: var(--ink3);
+  font-family: 'DM Sans', sans-serif; transition: all 0.12s;
 }
-.ci-claim-btn:hover { border-color: var(--amber); color: var(--amber); }
-.ci-claim-btn.active-mine { background: var(--amber); border-color: var(--amber); color: white; }
-.ci-claim-btn.active-split { background: #2a8a6e; border-color: #2a8a6e; color: white; }
+.ci-claim-btn:hover { border-color: var(--brown); color: var(--brown); }
+.ci-claim-btn.active-mine { background: var(--brown); border-color: var(--brown); color: white; }
+.ci-claim-btn.active-split { background: var(--green); border-color: var(--green); color: white; }
 .ci-left { flex: 1; }
-.ci-name { font-size: 15px; font-weight: 500; color: var(--ink); }
-.ci-claimedby { font-size: 11px; color: var(--ink3); margin-top: 2px; font-family: 'Courier Prime', monospace; }
-.ci-price { font-family: 'Courier Prime', monospace; font-size: 15px; color: var(--amber); }
-.ci-check { font-size: 18px; margin-left: 10px; }
-
+.ci-name { font-size: 14px; font-weight: 500; color: var(--ink); }
+.ci-claimedby { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.ci-price { font-size: 14px; color: var(--brown); font-weight: 600; font-variant-numeric: tabular-nums; }
 .claim-total-bar {
   position: sticky; bottom: 16px;
-  background: var(--ink); color: var(--parchment);
-  border-radius: var(--r); padding: 14px 20px;
+  background: var(--ink); color: white;
+  border-radius: var(--r2); padding: 14px 20px;
   display: flex; justify-content: space-between; align-items: center;
-  box-shadow: var(--shadow-md); margin-top: 20px;
-  font-family: 'Nunito', sans-serif; font-weight: 700;
+  box-shadow: var(--shadow-md); margin-top: 16px;
 }
-.ct-label { font-size: 14px; color: var(--parchment2); }
-.ct-amount { font-size: 24px; font-family: 'Courier Prime', monospace; color: var(--amber2); }
+.ct-label { font-size: 13px; color: rgba(255,255,255,0.6); font-weight: 500; }
+.ct-amount { font-size: 24px; color: var(--brown2); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ── MISC ── */
-.empty { padding: 20px; text-align: center; color: var(--ink4); font-size: 13px; font-style: italic; }
-.err { background: var(--red-pale); border: 1px solid rgba(163,48,48,0.25); color: var(--red); padding: 8px 14px; border-radius: var(--r); font-size: 12px; margin-top: 8px; display: none; }
-.divider { border: none; border-top: 1px solid var(--rule); margin: 14px 0; }
-.tag { font-family: 'Courier Prime', monospace; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
-.tag-green { background: rgba(46,107,62,0.1); color: var(--green); border: 1px solid rgba(46,107,62,0.2); }
-.tag-amber { background: var(--amber-pale); color: var(--amber); border: 1px solid var(--amber-border); }
+.empty { padding: 20px; text-align: center; color: var(--ink4); font-size: 13px; }
+.err { background: var(--red-bg); border: 1px solid rgba(192,57,43,0.2); color: var(--red); padding: 8px 13px; border-radius: var(--r); font-size: 12px; margin-top: 8px; display: none; font-weight: 500; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+.tag { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+.tag-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(45,106,79,0.2); }
+.tag-amber { background: var(--brown-bg); color: var(--brown); border: 1px solid var(--brown-border); }
 
-/* Party colors — warm bistro palette */
-.p0{color:#7a5c1e;border-color:#b8870a;background:rgba(184,135,10,.1)}
-.p1{color:#1e5c6e;border-color:#2a8a9e;background:rgba(42,138,158,.1)}
-.p2{color:#6e2a1e;border-color:#a84830;background:rgba(168,72,48,.1)}
-.p3{color:#2a5c2a;border-color:#3a8a3a;background:rgba(58,138,58,.1)}
-.p4{color:#5c1e5c;border-color:#8a3a8a;background:rgba(138,58,138,.1)}
-.p5{color:#5c3a1e;border-color:#8a622a;background:rgba(138,98,42,.1)}
-.p6{color:#1e3a5c;border-color:#2a5a8a;background:rgba(42,90,138,.1)}
-.p7{color:#5c1e2a;border-color:#8a2a3a;background:rgba(138,42,58,.1)}
-
-.ph0{background:#b8870a}.ph1{background:#2a7a8a}.ph2{background:#984030}
-.ph3{background:#3a7a3a}.ph4{background:#7a387a}.ph5{background:#8a5a28}
-.ph6{background:#2a527a}.ph7{background:#7a2838}
+/* Party colors — modern muted palette */
+.p0{color:#7a5c1e;border-color:#c49a3c;background:rgba(196,154,60,.1)}
+.p1{color:#1e5c6e;border-color:#3a9ab0;background:rgba(58,154,176,.1)}
+.p2{color:#7a2a1e;border-color:#b84830;background:rgba(184,72,48,.1)}
+.p3{color:#2a5c2a;border-color:#4a9a4a;background:rgba(74,154,74,.1)}
+.p4{color:#5c1e5c;border-color:#9a4a9a;background:rgba(154,74,154,.1)}
+.p5{color:#5c3a1e;border-color:#9a6a3a;background:rgba(154,106,58,.1)}
+.p6{color:#1e3a5c;border-color:#3a6a9a;background:rgba(58,106,154,.1)}
+.p7{color:#5c1e2a;border-color:#9a3a4a;background:rgba(154,58,74,.1)}
+.ph0{background:#b89040}.ph1{background:#3a8a9a}.ph2{background:#aa4030}
+.ph3{background:#4a8a4a}.ph4{background:#8a3a8a}.ph5{background:#9a6030}
+.ph6{background:#3a5a8a}.ph7{background:#8a3040}
 
 /* ── META FIELDS ── */
-.meta-field {
-  display: flex; align-items: baseline; gap: 10px;
-  padding: 6px 0; border-bottom: 1px dashed var(--rule);
-  font-size: 13px;
-}
+.meta-field { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .meta-field:last-child { border-bottom: none; }
-.meta-icon { font-size: 14px; min-width: 20px; }
-.meta-label {
-  font-family: 'Courier Prime', monospace;
-  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: var(--ink4); min-width: 90px;
-}
+.meta-icon { font-size: 13px; min-width: 20px; }
+.meta-label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ink4); min-width: 80px; }
 .meta-val { color: var(--ink2); font-weight: 500; }
-.meta-sep { color: var(--ink4); }
 
 /* ── STAT TILES ── */
-.stat-tile {
-  background: var(--white); border: 1px solid var(--rule2);
-  border-radius: var(--r); padding: 14px 16px; text-align: center;
-  box-shadow: var(--shadow);
-}
-.stat-num {
-  font-family: 'Courier Prime', monospace;
-  font-size: 20px; font-weight: 700; color: var(--amber);
-  margin-bottom: 4px;
-}
-.stat-lbl {
-  font-family: 'Courier Prime', monospace;
-  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: var(--ink3);
-}
-@media(max-width:480px) {
-  #results-stats { grid-template-columns: repeat(3,1fr) !important; }
-}
+.stat-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px 14px; text-align: center; box-shadow: var(--shadow-sm); }
+.stat-num { font-size: 18px; font-weight: 700; color: var(--brown); margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+.stat-lbl { font-size: 9px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink4); }
+@media(max-width:480px) { #results-stats { grid-template-columns: repeat(3,1fr) !important; } }
 
 /* Mobile */
-@media(max-width:560px){
-  .tabs .tab { font-size: 11px; padding: 8px 4px; }
-  .receipts-grid { grid-template-columns: 1fr; }
-}
+@media(max-width:560px){ .tabs .tab { font-size: 10px; padding: 8px 3px; } .receipts-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -455,8 +388,8 @@ input::placeholder { color: var(--ink4); }
     <div>
       <div class="wordmark">
         <svg width="130" height="38" viewBox="0 0 130 38" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <text y="32" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="36" font-weight="400" letter-spacing="-1.5">
-            <tspan fill="#1c1712">Split</tspan><tspan fill="#b8720a" font-weight="300">/</tspan><tspan fill="#b8720a">It</tspan>
+          <text y="32" font-family="'DM Sans', system-ui, sans-serif" font-size="34" font-weight="600" letter-spacing="-1.5">
+            <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
         <div class="header-tag">Split smarter · Pay faster</div>
@@ -486,8 +419,8 @@ input::placeholder { color: var(--ink4); }
 
   <!-- Session picker modal -->
   <div id="session-modal-overlay" onclick="if(event.target===this)closeSessionPicker()" style="display:none;position:fixed;inset:0;background:rgba(28,23,18,0.55);z-index:1000;align-items:center;justify-content:center;padding:20px">
-    <div style="background:var(--parchment);border-radius:10px;width:100%;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,0.25);overflow:hidden">
-      <div style="padding:18px 20px 14px;border-bottom:1.5px solid var(--rule2);display:flex;align-items:center;justify-content:space-between">
+    <div style="background:var(--surface);border-radius:10px;width:100%;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,0.25);overflow:hidden">
+      <div style="padding:18px 20px 14px;border-bottom:1.5px solid var(--border2);display:flex;align-items:center;justify-content:space-between">
         <span style="font-size:16px;font-weight:700">Recent Sessions</span>
         <button onclick="closeSessionPicker()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink3);line-height:1">×</button>
       </div>
@@ -557,12 +490,12 @@ input::placeholder { color: var(--ink4); }
     <!-- OCR totals check — only shown after OCR runs -->
     <div id="ocr-totals-check" style="display:none">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div style="background:white;border:1px solid var(--rule2);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);text-align:center">
+        <div style="background:white;border:1px solid var(--border2);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);text-align:center">
           <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Receipt Subtotal</div>
           <div id="ocr-receipt-total" style="font-family:'Courier Prime',monospace;font-size:22px;font-weight:700;color:var(--ink)">—</div>
           <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--ink4);margin-top:4px">before tax &amp; tip</div>
         </div>
-        <div style="background:white;border:1px solid var(--rule2);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);text-align:center">
+        <div style="background:white;border:1px solid var(--border2);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);text-align:center">
           <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Items Sum</div>
           <div id="ocr-items-sum" style="font-family:'Courier Prime',monospace;font-size:22px;font-weight:700;color:var(--ink)">—</div>
           <div id="ocr-diff-note" style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--ink4);margin-top:4px">before tax &amp; tip</div>
@@ -617,7 +550,7 @@ input::placeholder { color: var(--ink4); }
               <input type="number" id="tax" value="9" min="0" max="30" step="0.1" oninput="updateTaxTipCalc()">
               <span class="pct-lbl">%</span>
             </div>
-            <div id="tax-ocr-note" style="display:none;font-family:'Courier Prime',monospace;font-size:10px;color:#2a8a6e;margin-top:5px">✓ From receipt</div>
+            <div id="tax-ocr-note" style="display:none;font-family:'Courier Prime',monospace;font-size:10px;color:var(--green);margin-top:5px">✓ From receipt</div>
             <div id="calc-tax-amt" style="font-family:'Courier Prime',monospace;font-size:13px;font-weight:700;color:var(--ink2);margin-top:8px">$0.00</div>
           </div>
 
@@ -640,7 +573,7 @@ input::placeholder { color: var(--ink4); }
           <!-- Totals column -->
           <div class="setting">
             <label>Total</label>
-            <div style="background:var(--parchment);border:1px solid var(--rule2);border-radius:6px;padding:10px 12px">
+            <div style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:10px 12px">
               <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:5px">
                 <span>Subtotal</span><span id="calc-subtotal">$0.00</span>
               </div>
@@ -650,9 +583,9 @@ input::placeholder { color: var(--ink4); }
               <div style="display:flex;justify-content:space-between;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-bottom:8px">
                 <span>Tip</span><span id="calc-tip-line">$0.00</span>
               </div>
-              <div style="display:flex;justify-content:space-between;border-top:1px solid var(--rule2);padding-top:7px">
+              <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border2);padding-top:7px">
                 <span style="font-family:'Courier Prime',monospace;font-size:11px;font-weight:700;color:var(--ink);letter-spacing:1px">TOTAL</span>
-                <span id="calc-total" style="font-family:'Courier Prime',monospace;font-size:14px;font-weight:700;color:var(--amber)">$0.00</span>
+                <span id="calc-total" style="font-family:'Courier Prime',monospace;font-size:14px;font-weight:700;color:var(--brown)">$0.00</span>
               </div>
             </div>
           </div>
@@ -729,8 +662,8 @@ input::placeholder { color: var(--ink4); }
       <div class="results-sub" id="results-session-name" style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--ink3);margin-top:6px"></div>
       <div class="results-sub">Tap Venmo or Zelle to send payment instantly</div>
       <div id="live-indicator" style="display:none;margin-top:10px;display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap">
-        <span id="live-dot" style="display:inline-flex;align-items:center;gap:5px;font-family:'Courier Prime',monospace;font-size:11px;color:#2a8a6e;letter-spacing:1px">
-          <span style="width:7px;height:7px;border-radius:50%;background:#2a8a6e;display:inline-block;animation:pulse-dot 1.5s infinite"></span>
+        <span id="live-dot" style="display:inline-flex;align-items:center;gap:5px;font-family:'Courier Prime',monospace;font-size:11px;color:var(--green);letter-spacing:1px">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse-dot 1.5s infinite"></span>
           LIVE
         </span>
         <span id="live-status" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3)">watching for claims…</span>
@@ -739,7 +672,7 @@ input::placeholder { color: var(--ink4); }
     </div>
 
     <!-- Establishment banner -->
-    <div id="results-meta-banner" style="display:none;align-items:center;gap:8px;background:var(--parchment);border:1px solid var(--rule2);border-radius:var(--r);padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--ink2);flex-wrap:wrap;">
+    <div id="results-meta-banner" style="display:none;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--ink2);flex-wrap:wrap;">
       <span style="font-size:16px">🍽️</span>
       <span id="results-meta-text"></span>
     </div>
@@ -771,8 +704,8 @@ input::placeholder { color: var(--ink4); }
   <div class="claim-header">
     <div class="wordmark" style="text-align:center">
       <svg width="160" height="48" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block">
-        <text y="42" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="46" font-weight="400" letter-spacing="-2">
-          <tspan fill="#1c1712">Split</tspan><tspan fill="#b8720a" font-weight="300">/</tspan><tspan fill="#b8720a">It</tspan>
+        <text y="42" font-family="'DM Sans', system-ui, sans-serif" font-size="44" font-weight="600" letter-spacing="-2">
+          <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
         </text>
       </svg>
     </div>
@@ -808,8 +741,8 @@ input::placeholder { color: var(--ink4); }
 
 <!-- ══════════ DONE CLAIMING MODAL ══════════ -->
 <div id="done-modal-overlay" onclick="if(event.target===this)closeDoneModal()" style="display:none;position:fixed;inset:0;background:rgba(28,23,18,0.6);z-index:1000;align-items:flex-end;justify-content:center;padding:0">
-  <div id="done-modal" style="background:var(--parchment);width:100%;max-width:500px;border-radius:16px 16px 0 0;padding:0 0 32px;box-shadow:0 -8px 40px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;animation:slideUp 0.25s ease">
-    <div style="padding:18px 20px 14px;border-bottom:1.5px solid var(--rule2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--parchment);z-index:1">
+  <div id="done-modal" style="background:var(--surface);width:100%;max-width:500px;border-radius:16px 16px 0 0;padding:0 0 32px;box-shadow:0 -8px 40px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;animation:slideUp 0.25s ease">
+    <div style="padding:18px 20px 14px;border-bottom:1.5px solid var(--border2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1">
       <div>
         <div style="font-size:17px;font-weight:700" id="done-modal-title">Your Total</div>
         <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3);margin-top:2px" id="done-modal-session"></div>
@@ -1261,10 +1194,10 @@ function removeItem(btn) {
 
 function renderItems() {
   const list = document.getElementById('item-list');
-  const empty = document.getElementById('item-empty');
   document.getElementById('item-count').textContent = state.items.length + ' item' + (state.items.length!==1?'s':'');
   if (!state.items.length) {
-    list.innerHTML = ''; list.appendChild(empty); return;
+    list.innerHTML = '<div class="empty" id="item-empty">No items yet. Scan your receipt or add items manually.</div>';
+    return;
   }
   list.innerHTML = '';
   state.items.forEach(item => {
@@ -1306,9 +1239,11 @@ function removeParty(btn) {
 
 function renderParties() {
   const chips = document.getElementById('party-chips');
-  const empty = document.getElementById('party-empty');
   document.getElementById('party-count').textContent = state.parties.length + ' part' + (state.parties.length===1?'y':'ies');
-  if (!state.parties.length) { chips.innerHTML=''; chips.appendChild(empty); return; }
+  if (!state.parties.length) {
+    chips.innerHTML = '<div class="empty" id="party-empty">No parties yet. Add your first party above.</div>';
+    return;
+  }
   chips.innerHTML = '';
   state.parties.forEach(p => {
     const chip = document.createElement('div');
@@ -1417,17 +1352,17 @@ function updateOCRTotalsCheck() {
     const diff = itemsSum - receiptSubtotal;
     const absDiff = Math.abs(diff);
     if (absDiff < 0.02) {
-      sumEl.style.color = '#2a8a6e';
+      sumEl.style.color = 'var(--green)';
       diffEl.textContent = '✓ matches receipt';
-      diffEl.style.color = '#2a8a6e';
+      diffEl.style.color = 'var(--green)';
     } else if (diff < 0) {
       sumEl.style.color = '#c0392b';
       diffEl.textContent = `${fmt(absDiff)} missing — check items`;
       diffEl.style.color = '#c0392b';
     } else {
-      sumEl.style.color = 'var(--amber)';
+      sumEl.style.color = 'var(--brown)';
       diffEl.textContent = `${fmt(absDiff)} over subtotal`;
-      diffEl.style.color = 'var(--amber)';
+      diffEl.style.color = 'var(--brown)';
     }
   } else {
     sumEl.style.color = 'var(--ink)';
@@ -1546,7 +1481,7 @@ function openQR() {
   const container = document.getElementById('qr-container');
   container.innerHTML = '';
   qrArea.style.display = 'block';
-  new QRCode(container, { text: url, width: 200, height: 200, colorDark:'#1c1712', colorLight:'#ffffff' });
+  new QRCode(container, { text: url, width: 200, height: 200, colorDark:'#1a1a18', colorLight:'#ffffff' });
   qrArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
@@ -1646,11 +1581,11 @@ function recalculate() {
     claimedEl.style.color = 'var(--ink3)';
     claimedTile.style.background = '';
   } else if (unclaimed === 0) {
-    claimedEl.style.color = '#2a8a6e';
-    claimedTile.style.background = 'rgba(42,138,110,0.06)';
+    claimedEl.style.color = 'var(--green)';
+    claimedTile.style.background = 'rgba(45,106,79,0.06)';
     claimedTile.querySelector('.stat-lbl').textContent = 'All Claimed ✓';
   } else {
-    claimedEl.style.color = 'var(--amber)';
+    claimedEl.style.color = 'var(--brown)';
     claimedTile.style.background = '';
     claimedTile.querySelector('.stat-lbl').textContent = `${unclaimed} left`;
   }
@@ -1834,11 +1769,11 @@ function openSessionPicker() {
     list.innerHTML = results.map(s => {
       const date = new Date(s.savedAt).toLocaleDateString('en-US', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
       const claimBadge = s.live
-        ? `<span style="color:#2a8a6e;font-weight:700">${s.claims}/${s.total} claimed</span>`
+        ? `<span style="color:var(--green);font-weight:700">${s.claims}/${s.total} claimed</span>`
         : `<span style="color:var(--ink4)">expired</span>`;
       return `
-        <div onclick="resumeSession('${s.id}')" style="padding:14px 16px;border:1px solid var(--rule2);border-radius:8px;margin-bottom:8px;cursor:pointer;background:white;transition:border-color 0.12s"
-          onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--rule2)'">
+        <div onclick="resumeSession('${s.id}')" style="padding:14px 16px;border:1px solid var(--border2);border-radius:8px;margin-bottom:8px;cursor:pointer;background:white;transition:border-color 0.12s"
+          onmouseover="this.style.borderColor='var(--brown)'" onmouseout="this.style.borderColor='var(--border2)'">
           <div style="font-weight:700;font-size:14px;margin-bottom:4px">${esc(s.name)}</div>
           <div style="display:flex;gap:12px;font-family:'Courier Prime',monospace;font-size:11px;color:var(--ink3)">
             <span>${s.partyCount} parties · ${s.itemCount} items</span>
@@ -1951,7 +1886,7 @@ async function pollClaims() {
       // Show activity in feed
       const feed = document.getElementById('live-feed');
       feed.textContent = changes[changes.length - 1];
-      feed.style.color = 'var(--amber)';
+      feed.style.color = 'var(--brown)';
       setTimeout(() => { feed.style.color = 'var(--ink3)'; }, 2000);
     }
 
@@ -2019,7 +1954,7 @@ function selectParty(party) {
     badge.style.cssText = 'text-align:center;margin-bottom:12px;font-size:13px;font-weight:700;font-family:"Courier Prime",monospace;color:var(--ink3)';
     document.getElementById('claim-items-wrap').before(badge);
   }
-  badge.innerHTML = `Claiming as <span class="btn ${party.color}" style="padding:3px 12px;font-size:12px;font-weight:700;border-radius:20px">${party.name}</span> &nbsp;<a href="#" onclick="document.getElementById('claim-who-card').style.display='';document.getElementById('claim-items-wrap').style.display='none';return false;" style="font-size:11px;color:var(--amber)">change</a>`;
+  badge.innerHTML = `Claiming as <span class="btn ${party.color}" style="padding:3px 12px;font-size:12px;font-weight:700;border-radius:20px">${party.name}</span> &nbsp;<a href="#" onclick="document.getElementById('claim-who-card').style.display='';document.getElementById('claim-items-wrap').style.display='none';return false;" style="font-size:11px;color:var(--brown)">change</a>`;
   document.getElementById('claim-items-wrap').style.display = 'block';
   renderClaimItems();
   document.getElementById('claim-items-wrap').scrollIntoView({behavior:'smooth'});
@@ -2115,9 +2050,17 @@ async function claimItem(e) {
 }
 
 function newSession() {
-  if (state.items.length || state.parties.length) {
-    if (!confirm('Start a new session? Your current items and parties will be cleared.')) return;
-  }
+  document.getElementById('new-session-modal').style.display = 'flex';
+}
+
+function closeNewSessionModal() {
+  document.getElementById('new-session-modal').style.display = 'none';
+}
+
+function confirmNewSession() {
+  closeNewSessionModal();
+
+  // ── Reset state ──────────────────────────────────────
   state.items = [];
   state.parties = [];
   state.claims = {};
@@ -2125,20 +2068,54 @@ function newSession() {
   state.sessionId = null;
   state.sessionName = generateSessionName(null);
   colorIdx = 0;
+  selectedImage = null;
   stopLiveSync();
+
+  // ── Reset OCR zone ───────────────────────────────────
+  const preview = document.getElementById('ocr-preview');
+  preview.src = '';
+  preview.style.display = 'none';
+  document.getElementById('ocr-zone').classList.remove('drag-over');
+  document.getElementById('ocr-status').textContent = '';
+  document.getElementById('ocr-status').className = 'ocr-status';
+  document.getElementById('ocr-err').style.display = 'none';
+  document.getElementById('ocr-btn').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.getElementById('camera-input').value = '';
+
+  // ── Reset receipt details ────────────────────────────
+  document.getElementById('meta-card').style.display = 'none';
+  document.getElementById('meta-fields').innerHTML = '';
+  document.getElementById('tax-ocr-note').style.display = 'none';
+  document.getElementById('ocr-totals-check').style.display = 'none';
+  document.getElementById('ocr-receipt-total').textContent = '—';
+  document.getElementById('ocr-items-sum').textContent = '—';
+
+  // ── Reset tax/tip ────────────────────────────────────
+  document.getElementById('tax').value = 9;
+  document.getElementById('tip').value = 18;
+  updateTaxTipCalc();
+
+  // ── Reset share step ─────────────────────────────────
   document.getElementById('session-badge').style.display = 'none';
   document.getElementById('link-area').style.display = 'none';
   document.getElementById('qr-area').style.display = 'none';
-  document.getElementById('ocr-preview').style.display = 'none';
-  document.getElementById('ocr-status').textContent = '';
-  document.getElementById('meta-card').style.display = 'none';
-  document.getElementById('tax').value = 9;
-  document.getElementById('tip').value = 18;
-  document.getElementById('tax-ocr-note').style.display = 'none';
-  document.getElementById('ocr-totals-check').style.display = 'none';
+  document.getElementById('session-name-input').value = '';
+  document.getElementById('session-name-display').textContent = '';
+
+  // ── Reset results step ───────────────────────────────
+  document.getElementById('receipts-grid').innerHTML = '';
+  document.getElementById('grand-total').textContent = '$0.00';
+  document.getElementById('results-stats').style.display = 'none';
+  document.getElementById('results-session-name').textContent = '';
+  document.getElementById('live-indicator').style.display = 'none';
+  document.getElementById('live-feed').style.display = 'none';
+
+  // ── Re-render and navigate ───────────────────────────
   renderAll();
+  updateSessionNameDisplay();
   goStep(0);
-  window.history.replaceState(null, '', location.pathname);
+  try { window.history.replaceState(null, '', location.pathname); } catch(e) {}
 }
 
 function closeDoneModal() {
@@ -2290,5 +2267,34 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('claimer-name')?.addEventListener('keydown', e => { if (e.key==='Enter') setClaimer(); });
 });
 </script>
+<!-- ══════════ NEW SESSION CONFIRM MODAL ══════════ -->
+<div id="new-session-modal" style="display:none;position:fixed;inset:0;background:rgba(26,26,24,0.5);z-index:2000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeNewSessionModal()">
+  <div style="background:var(--surface);border-radius:var(--r3);width:100%;max-width:380px;box-shadow:var(--shadow-md);overflow:hidden">
+    <div style="padding:24px 24px 0">
+      <div style="font-size:32px;margin-bottom:12px;text-align:center">🗑️</div>
+      <div style="font-size:17px;font-weight:700;color:var(--ink);text-align:center;margin-bottom:8px">Start a new session?</div>
+      <div style="font-size:13px;color:var(--ink3);text-align:center;line-height:1.6;margin-bottom:20px">
+        This will clear everything — receipt photo, all items, parties, assignments, and calculations. This cannot be undone.
+      </div>
+      <div id="new-session-checklist" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:20px;font-size:12px;color:var(--ink3);display:flex;flex-direction:column;gap:6px">
+        <div>🧾 Receipt photo &amp; OCR data</div>
+        <div>📋 All items and prices</div>
+        <div>👥 All parties</div>
+        <div>🎯 All assignments &amp; claims</div>
+        <div>⚙️ Tax &amp; tip settings</div>
+        <div>🔗 Active session link</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border)">
+      <button onclick="closeNewSessionModal()" style="padding:16px;background:none;border:none;border-right:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:var(--ink3);cursor:pointer">
+        Cancel
+      </button>
+      <button onclick="confirmNewSession()" style="padding:16px;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:var(--red);cursor:pointer">
+        Clear &amp; Reset
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
