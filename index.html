@@ -393,7 +393,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v41d323fc</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v5d9b9490</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -528,6 +528,10 @@ input::placeholder { color: var(--ink4); }
         <div class="row">
           <input type="text" id="pname" placeholder="Name or group (e.g. 'The Smiths')…" maxlength="30">
           <button class="btn btn-green" onclick="addParty()">+ Add</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <input type="checkbox" id="p-birthday" style="width:16px;height:16px;accent-color:var(--brown);cursor:pointer">
+          <label for="p-birthday" style="font-size:13px;color:var(--ink2);cursor:pointer">🎂 Special occasion / birthday — their items split across everyone</label>
         </div>
         <div class="err" id="party-err">Please enter a name.</div>
         <div class="chips" id="party-chips">
@@ -1125,7 +1129,7 @@ Rules for meta:
           id: Date.now() + Math.random(),
           name: item.name,
           price: parseFloat(item.price),
-          assignees: state.parties.map(p => p.id)
+          assignees: []
         });
       }
     });
@@ -1252,7 +1256,7 @@ function addItem() {
   state.items.push({
     id: Date.now() + Math.random(),
     name, price,
-    assignees: state.parties.map(p => p.id)
+    assignees: []
   });
   document.getElementById('iname').value = '';
   document.getElementById('iprice').value = '';
@@ -1295,12 +1299,14 @@ function addParty() {
   err.style.display = 'none';
   const color = COLORS[colorIdx % COLORS.length];
   colorIdx++;
-  const party = { id: Date.now() + Math.random(), name, color };
+  const celebrant = document.getElementById('p-birthday').checked;
+  const party = { id: Date.now() + Math.random(), name, color, celebrant };
   state.parties.push(party);
-  // add to all existing items
-  state.items.forEach(i => { if (!i.assignees.includes(party.id)) i.assignees.push(party.id); });
+  // Do NOT auto-assign to items — default is unchecked (change #2)
   document.getElementById('pname').value = '';
+  document.getElementById('p-birthday').checked = false;
   renderParties();
+  renderAssignList();
 }
 
 function removeParty(btn) {
@@ -1322,9 +1328,44 @@ function renderParties() {
   state.parties.forEach(p => {
     const chip = document.createElement('div');
     chip.className = `chip ${p.color}`;
-    chip.innerHTML = `${esc(p.name)} <button class="x" data-party-id="${p.id}" onclick="removeParty(this)">×</button>`;
+    chip.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px 6px 12px';
+    const birthdayBadge = p.celebrant
+      ? `<span style="font-size:13px" title="Special occasion — their items split by all">🎂</span>`
+      : '';
+    const toggleTitle = p.celebrant ? 'Remove birthday' : 'Mark as birthday/special occasion';
+    chip.innerHTML = `
+      ${birthdayBadge}
+      <span>${esc(p.name)}</span>
+      <button class="x" title="${toggleTitle}" data-party-id="${p.id}" onclick="toggleCelebrant(this)" style="opacity:0.5;font-size:12px;padding:0 2px">${p.celebrant ? '🎂' : '🎉'}</button>
+      <button class="x" data-party-id="${p.id}" onclick="removeParty(this)" style="margin-left:2px">×</button>
+    `;
     chips.appendChild(chip);
   });
+
+  // Show celebrant note if any
+  const hasCelebrant = state.parties.some(p => p.celebrant);
+  let note = document.getElementById('celebrant-note');
+  if (hasCelebrant) {
+    if (!note) {
+      note = document.createElement('div');
+      note.id = 'celebrant-note';
+      note.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(139,111,71,0.08);border:1px solid var(--brown-border);border-radius:var(--r);font-size:12px;color:var(--brown)';
+      chips.parentNode.appendChild(note);
+    }
+    const names = state.parties.filter(p => p.celebrant).map(p => p.name).join(', ');
+    note.innerHTML = `🎂 <strong>${esc(names)}</strong> — their items will be split evenly across all other parties.`;
+  } else if (note) {
+    note.remove();
+  }
+}
+
+function toggleCelebrant(btn) {
+  const id = btn.dataset.partyId;
+  const party = state.parties.find(p => String(p.id) === String(id));
+  if (party) {
+    party.celebrant = !party.celebrant;
+    renderParties();
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1665,6 +1706,35 @@ function recalculate() {
     }
   });
 
+  // ── Celebrant redistribution ──────────────────────────
+  // For any party marked as celebrant, their subtotal gets split
+  // evenly across all other parties as a "birthday share" line item
+  const celebrants = state.parties.filter(p => p.celebrant);
+  const nonCelebrants = state.parties.filter(p => !p.celebrant);
+  const splitTargets = nonCelebrants.length > 0 ? nonCelebrants : state.parties; // fallback: all
+
+  celebrants.forEach(celebrant => {
+    const celebrantSub = subs[celebrant.id] || 0;
+    if (celebrantSub <= 0) return;
+    const sharePerParty = celebrantSub / splitTargets.length;
+    const fakeItem = {
+      id: `bday-${celebrant.id}`,
+      name: `🎂 ${celebrant.name}'s share`,
+      price: celebrantSub,
+      isBirthdayShare: true,
+    };
+    // Remove from celebrant's own bill
+    subs[celebrant.id] = 0;
+    partyItemMap[celebrant.id] = partyItemMap[celebrant.id].map(e => ({
+      ...e, _isCelebrantItem: true
+    }));
+    // Add share to each non-celebrant
+    splitTargets.forEach(p => {
+      subs[p.id] += sharePerParty;
+      partyItemMap[p.id].push({ item: fakeItem, share: sharePerParty, splitBy: splitTargets.length, isBirthdayShare: true });
+    });
+  });
+
   let grand = 0;
   const grid = document.getElementById('receipts-grid');
   grid.innerHTML = '';
@@ -1721,11 +1791,12 @@ function recalculate() {
     grand += total;
 
     const lines = partyItemMap[party.id] || [];
-    const linesHtml = lines.map(({ item, share, splitBy }) => `
-      <div class="r-line">
-        <span class="r-name">${esc(item.name)}</span>
-        ${splitBy > 1 ? `<span class="r-split">÷${splitBy}</span>` : ''}
-        <span class="r-price">${fmt(share)}</span>
+    const linesHtml = lines.map(({ item, share, splitBy, isBirthdayShare }) => `
+      <div class="r-line" ${isBirthdayShare ? 'style="border-top:1px dashed var(--brown-border);margin-top:4px;padding-top:8px"' : ''}>
+        <span class="r-name" ${isBirthdayShare ? 'style="color:var(--brown);font-weight:600"' : ''}>${esc(item.name)}</span>
+        ${splitBy > 1 && !isBirthdayShare ? `<span class="r-split">÷${splitBy}</span>` : ''}
+        ${splitBy > 1 && isBirthdayShare ? `<span class="r-split" style="color:var(--brown)">÷${splitBy}</span>` : ''}
+        <span class="r-price" ${isBirthdayShare ? 'style="color:var(--brown)"' : ''}>${fmt(share)}</span>
       </div>`).join('');
 
     const tipLabel = autoGrat > 0 ? `Auto Gratuity (${autoGrat}%)` : `Tip (${tip}%)`;
@@ -1742,9 +1813,10 @@ function recalculate() {
     const zelleUrl = `https://enroll.zellepay.com/qr-codes`;
     card.innerHTML = `
       <div class="receipt-head ${C_HEADS[COLORS.indexOf(party.color)]}">
-        <span class="receipt-name">${esc(party.name)}</span>
+        <span class="receipt-name">${party.celebrant ? '🎂 ' : ''}${esc(party.name)}</span>
         <span class="receipt-count">${lines.length} item${lines.length!==1?'s':''}</span>
       </div>
+      ${party.celebrant ? `<div style="background:rgba(139,111,71,0.1);padding:6px 16px;font-size:11px;color:var(--brown);font-weight:600;text-align:center;border-bottom:1px solid var(--brown-border)">🎉 Their items are covered by the group</div>` : ''}
       <div class="receipt-items">${linesHtml || '<div class="empty">No items assigned</div>'}</div>
       <hr class="divider" style="margin:0 16px">
       <div class="receipt-subs">
@@ -1754,10 +1826,10 @@ function recalculate() {
         <div class="r-sub"><span>${tipLabel}</span><span>${fmt(tipAmt)}</span></div>
       </div>
       <div class="receipt-total">
-        <span class="rt-label">TOTAL DUE</span>
-        <span class="rt-amount" style="color:var(--green)">${fmt(total)}</span>
+        <span class="rt-label">${party.celebrant ? '🎂 TOTAL DUE' : 'TOTAL DUE'}</span>
+        <span class="rt-amount" style="color:var(--green)">${party.celebrant ? '$0.00 🎉' : fmt(total)}</span>
       </div>
-      <div class="pay-btns">
+      ${!party.celebrant ? `<div class="pay-btns">
         <a href="${venmoUrl}" class="pay-btn pay-venmo" onclick="handleVenmo(event,'${amount}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 2c.6 2.1.9 4.3.9 6.7 0 6.7-5.7 15.3-10.4 15.3-2.5 0-3.8-2.1-5.4-8.4L3 11.4c1.5-1.2 3.1-2.5 3.1-4.5 0-1.4-.8-2.2-1.8-2.2-1.6 0-3.3 1.9-3.3 5.1 0 1.8.4 3.1.4 3.1L-.3 15C-1.1 12.1-1.5 9.5-1.5 7.2-1.5 3 1.1 1 3.8 1c3.1 0 5 2.5 5 5.4 0 2.6-1.5 4.3-2.5 5.7 1 4 2.1 6.1 3.3 6.1 2.4 0 6.7-8.3 6.7-12.5 0-1.7-.3-3.1-.9-4.2L19.4 2z"/></svg>
           Venmo
@@ -1766,7 +1838,7 @@ function recalculate() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2L3 14h9l-1.5 8L21 10h-9z"/></svg>
           Zelle
         </a>
-      </div>
+      </div>` : ''}
     `;
     grid.appendChild(card);
   });
