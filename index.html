@@ -393,7 +393,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v5d9b9490</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v765c7385</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -617,6 +617,10 @@ input::placeholder { color: var(--ink4); }
               <input type="number" id="misc" value="0" min="0" step="0.01" oninput="updateTaxTipCalc()" style="max-width:120px">
             </div>
             <div id="misc-ocr-note" style="display:none;font-size:10px;color:var(--green);margin-top:5px">✓ From receipt</div>
+            <div id="misc-cc-warning" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(192,57,43,0.07);border:1px solid rgba(192,57,43,0.2);border-radius:var(--r);font-size:11px;color:var(--red);line-height:1.5">
+              ⚠️ <strong>Credit card surcharge detected.</strong><br>
+              This fee may be illegal in your state. Guests can ask to pay cash to avoid it.
+            </div>
           </div>
           <div class="setting">
             <label>Auto-Gratuity <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink4)">(already added by restaurant)</span></label>
@@ -1157,7 +1161,34 @@ Rules for meta:
       if (meta.misc != null && meta.misc > 0) {
         document.getElementById('misc').value = meta.misc.toFixed(2);
         state.misc = meta.misc;
-        document.getElementById('misc-ocr-note').style.display = 'block';
+
+        // Compute surcharge percent from subtotal
+        const miscBase = meta.subtotal ||
+          itemsArr.reduce((a, b) => a + parseFloat(b.price || 0), 0);
+        const miscPct = miscBase > 0
+          ? parseFloat((meta.misc / miscBase * 100).toFixed(2))
+          : null;
+
+        // Build note text with label and percent
+        const miscLabel = meta.misc_label || 'Misc charge';
+        const pctStr = miscPct != null ? ` (${miscPct}%)` : '';
+        const noteEl = document.getElementById('misc-ocr-note');
+        noteEl.textContent = `✓ ${miscLabel}${pctStr} — from receipt`;
+        noteEl.style.color = 'var(--green)';
+        noteEl.style.display = 'block';
+
+        // Detect credit card surcharge keywords
+        const ccKeywords = ['credit card', 'cc surcharge', 'card fee', 'credit surcharge',
+          'cc fee', 'card surcharge', 'credit fee', 'payment surcharge', 'card processing'];
+        const labelLower = (meta.misc_label || '').toLowerCase();
+        const isCCSurcharge = ccKeywords.some(kw => labelLower.includes(kw));
+        if (isCCSurcharge) {
+          document.getElementById('misc-cc-warning').style.display = 'block';
+          noteEl.style.color = 'var(--red)';
+          noteEl.textContent = `⚠️ ${miscLabel}${pctStr} — credit card surcharge`;
+        } else {
+          document.getElementById('misc-cc-warning').style.display = 'none';
+        }
       }
 
       // Auto-populate auto-gratuity — use pct if available, else derive from amount
@@ -1216,7 +1247,12 @@ function renderMeta() {
     { icon: '🕐', label: 'Time',           val: m.time },
     { icon: '🧾', label: 'Subtotal',       val: m.subtotal != null ? fmt(m.subtotal) : null },
     { icon: '🏛️', label: 'Tax',            val: m.tax != null ? fmt(m.tax) + taxPctDisplay : null },
-    { icon: '🔧', label: m.misc_label || 'Misc', val: m.misc != null && m.misc > 0 ? fmt(m.misc) : null },
+    { icon: '🔧', label: m.misc_label || 'Misc', val: (() => {
+        if (m.misc == null || m.misc <= 0) return null;
+        const base = m.subtotal || state.items.reduce((a,b) => a+b.price, 0);
+        const pct = base > 0 ? ` (${parseFloat((m.misc/base*100).toFixed(2))}%)` : '';
+        return fmt(m.misc) + pct;
+      })() },
     { icon: '🤝', label: 'Auto Gratuity', val: m.auto_gratuity != null && m.auto_gratuity > 0 ? fmt(m.auto_gratuity) + autoGratDisplay : null },
     { icon: '💰', label: 'Total',          val: m.total != null ? fmt(m.total) : null },
   ].filter(f => f.val);
@@ -2289,6 +2325,7 @@ function confirmNewSession() {
   document.getElementById('meta-fields').innerHTML = '';
   document.getElementById('tax-ocr-note').style.display = 'none';
   document.getElementById('misc-ocr-note').style.display = 'none';
+  document.getElementById('misc-cc-warning').style.display = 'none';
   document.getElementById('autograt-ocr-note').style.display = 'none';
   document.getElementById('ocr-totals-check').style.display = 'none';
   document.getElementById('ocr-receipt-total').textContent = '—';
