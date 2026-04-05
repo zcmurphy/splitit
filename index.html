@@ -393,7 +393,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">vf9a6f20b</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v072b284b</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -1791,7 +1791,7 @@ function recalculate() {
     claimedTile.querySelector('.stat-lbl').textContent = `${unclaimed} left`;
   }
 
-  document.getElementById('stat-total').textContent = fmt(totalCost * (1 + tax/100 + tip/100));
+  document.getElementById('stat-total').textContent = fmt(totalCost * (1 + tax/100 + effectiveTip/100) + misc);
   document.getElementById('stat-avg').textContent = fmt(avgCost);
   document.getElementById('results-stats').style.display = 'grid';
 
