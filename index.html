@@ -393,7 +393,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v136a5f8e</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">vf9a6f20b</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -1130,7 +1130,7 @@ Rules for meta:
     itemsArr.forEach(item => {
       if (item.name && !isNaN(parseFloat(item.price))) {
         state.items.push({
-          id: Date.now() + Math.random(),
+          id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
           name: item.name,
           price: parseFloat(item.price),
           assignees: []
@@ -1290,7 +1290,7 @@ function addItem() {
   if (!name || isNaN(price) || price < 0) { err.style.display='block'; return; }
   err.style.display = 'none';
   state.items.push({
-    id: Date.now() + Math.random(),
+    id: Date.now() * 1000 + Math.floor(Math.random() * 1000),
     name, price,
     assignees: []
   });
@@ -1300,8 +1300,8 @@ function addItem() {
 }
 
 function removeItem(btn) {
-  const id = parseFloat(btn.dataset.itemId);
-  state.items = state.items.filter(i => i.id !== id);
+  const id = btn.dataset.itemId;
+  state.items = state.items.filter(i => String(i.id) !== String(id));
   renderItems();
   renderAssignList();
 }
@@ -1336,7 +1336,7 @@ function addParty() {
   const color = COLORS[colorIdx % COLORS.length];
   colorIdx++;
   const celebrant = document.getElementById('p-birthday').checked;
-  const party = { id: Date.now() + Math.random(), name, color, celebrant };
+  const party = { id: Date.now() * 1000 + Math.floor(Math.random() * 1000), name, color, celebrant };
   state.parties.push(party);
   // Do NOT auto-assign to items — default is unchecked (change #2)
   document.getElementById('pname').value = '';
@@ -1412,20 +1412,22 @@ function renderAssignList() {
   if (!state.items.length) {
     list.innerHTML = '<div class="empty">No items yet. Go back and add items first.</div>'; return;
   }
-  const claims = state.claims || {};
   const partyCount = state.parties.length || 1;
   list.innerHTML = '';
   state.items.forEach(item => {
-    const claim = claims[String(item.id)];
-    const isMine = claim && claim !== '__split__';
-    const isSplit = claim === '__split__';
+    // Derive badge from assignees (single source of truth)
+    const assignedIds = (item.assignees || []).map(String);
+    const assignedParties = state.parties.filter(p => assignedIds.includes(String(p.id)));
+    const isSplit = assignedParties.length === partyCount && partyCount > 1;
+    const isMine = assignedParties.length === 1;
 
-    // Build claim badge
     let claimBadge = '';
-    if (isMine) {
-      claimBadge = `<span class="claim-badge claim-badge-mine">✓ ${esc(claim)}</span>`;
-    } else if (isSplit) {
+    if (isSplit) {
       claimBadge = `<span class="claim-badge claim-badge-split">÷ Split ×${partyCount}</span>`;
+    } else if (isMine) {
+      claimBadge = `<span class="claim-badge claim-badge-mine">✓ ${esc(assignedParties[0].name)}</span>`;
+    } else if (assignedParties.length > 1) {
+      claimBadge = `<span class="claim-badge claim-badge-split">÷ ${assignedParties.length} parties</span>`;
     }
 
     const row = document.createElement('div');
@@ -1433,10 +1435,10 @@ function renderAssignList() {
 
     const chipsHtml = state.parties.length
       ? state.parties.map(p => {
-          const on = item.assignees.findIndex(a => String(a) === String(p.id)) !== -1 ? 'on' : '';
+          const on = assignedIds.includes(String(p.id)) ? 'on' : '';
           return `<span class="ac ${p.color} ${on}" data-item-id="${item.id}" data-party-id="${p.id}" onclick="toggleAssign(this)">${esc(p.name)}</span>`;
         }).join('')
-      : '<span style="font-size:11px;color:var(--text3)">Add parties first</span>';
+      : '<span style="font-size:11px;color:var(--ink3)">Add parties first</span>';
 
     row.innerHTML = `
       <div style="flex:1;min-width:0">
@@ -2482,50 +2484,80 @@ async function saveModalAsImage() {
 }
 
 function doneClaming() {
-  const partyCount = (claimState.parties || []).length || 1;
+  const parties = claimState.parties || [];
+  const partyCount = parties.length || 1;
   const tax = claimState.tax || 9;
   const tip = claimState.tip || 18;
-  const claims = claimState.claims || {};
+  const misc = claimState.misc || 0;
+  const autoGrat = claimState.autoGratuity || 0;
+  const effectiveTip = autoGrat > 0 ? autoGrat : tip;
 
-  // Normalize: find items by loose ID match (handles string/number mismatches)
-  const findItem = id => claimState.items.find(i => String(i.id) === String(id));
-
-  const myClaims = Object.entries(claims)
-    .filter(([, v]) => v === claimerName)
-    .map(([id]) => findItem(id))
-    .filter(Boolean);
-
-  const splitClaims = Object.entries(claims)
-    .filter(([, v]) => v === '__split__')
-    .map(([id]) => findItem(id))
-    .filter(Boolean);
-
-  const mineTotal = myClaims.reduce((a, b) => a + b.price, 0);
-  const splitTotal = splitClaims.reduce((a, b) => a + b.price / partyCount, 0);
-  const subtotal = mineTotal + splitTotal;
-  const totalWithTT = subtotal * (1 + tax / 100 + tip / 100);
-  const taxAmt = subtotal * tax / 100;
-  const tipAmt = subtotal * tip / 100;
-
-  // Find my party color
-  const myParty = (claimState.parties || []).find(p => p.name === claimerName);
+  const myParty = parties.find(p => p.name === claimerName);
   const headClass = myParty ? C_HEADS[COLORS.indexOf(myParty.color)] : 'ph0';
 
+  // Derive my items from item.assignees (single source of truth)
+  const items = claimState.items || [];
+  const myItems = [];
+  let subtotal = 0;
+
+  items.forEach(item => {
+    const assignedIds = (item.assignees || []).map(String);
+    const assignedCount = parties.filter(p => assignedIds.includes(String(p.id))).length;
+    if (!myParty || !assignedIds.includes(String(myParty.id))) return;
+    const share = item.price / (assignedCount || 1);
+    myItems.push({ item, share, splitBy: assignedCount });
+    subtotal += share;
+  });
+
+  // Birthday redistribution — add my share of each celebrant's subtotal
+  const celebrants = parties.filter(p => p.celebrant);
+  const nonCelebrants = parties.filter(p => !p.celebrant);
+  const splitTargets = nonCelebrants.length > 0 ? nonCelebrants : parties;
+  const birthdayLines = [];
+
+  if (myParty && !myParty.celebrant && splitTargets.some(p => p.name === claimerName)) {
+    celebrants.forEach(celebrant => {
+      // Sum what the celebrant was assigned
+      let celebrantSub = 0;
+      items.forEach(item => {
+        const assignedIds = (item.assignees || []).map(String);
+        if (assignedIds.includes(String(celebrant.id))) {
+          celebrantSub += item.price / assignedIds.filter(id => parties.find(p => String(p.id) === id)).length;
+        }
+      });
+      if (celebrantSub > 0) {
+        const myShare = celebrantSub / splitTargets.length;
+        subtotal += myShare;
+        birthdayLines.push({ name: `🎂 ${celebrant.name}'s share`, share: myShare, splitBy: splitTargets.length });
+      }
+    });
+  }
+
+  const miscShare = partyCount > 0 ? misc / partyCount : 0;
+  subtotal += miscShare;
+  const taxAmt = subtotal * tax / 100;
+  const tipAmt = subtotal * effectiveTip / 100;
+  const totalWithTT = subtotal + taxAmt + tipAmt;
+  const tipLabel = autoGrat > 0 ? `Auto Gratuity (${autoGrat}%)` : `Tip (${tip}%)`;
+
   // Build item lines
-  const mineLines = myClaims.map(item => `
-    <div class="r-line">
-      <span class="r-name">${esc(item.name)}</span>
-      <span class="r-price">${fmt(item.price)}</span>
+  const mineLines = myItems
+    .filter(({ item }) => !item.isBirthdayShare)
+    .map(({ item, share, splitBy }) => `
+      <div class="r-line">
+        <span class="r-name">${esc(item.name)}</span>
+        ${splitBy > 1 ? `<span class="r-split">÷${splitBy}</span>` : ''}
+        <span class="r-price">${fmt(share)}</span>
+      </div>`).join('');
+
+  const bdayLinesHtml = birthdayLines.map(({ name, share, splitBy }) => `
+    <div class="r-line" style="border-top:1px dashed var(--brown-border);margin-top:4px;padding-top:8px">
+      <span class="r-name" style="color:var(--brown);font-weight:600">${esc(name)}</span>
+      <span class="r-split" style="color:var(--brown)">÷${splitBy}</span>
+      <span class="r-price" style="color:var(--brown)">${fmt(share)}</span>
     </div>`).join('');
 
-  const splitLines = splitClaims.map(item => `
-    <div class="r-line">
-      <span class="r-name">${esc(item.name)}</span>
-      <span class="r-split">÷${partyCount}</span>
-      <span class="r-price">${fmt(item.price / partyCount)}</span>
-    </div>`).join('');
-
-  const itemCount = myClaims.length + splitClaims.length;
+  const itemCount = myItems.length + birthdayLines.length;
   const amount = totalWithTT.toFixed(2);
   const note = encodeURIComponent(`SplitIt — ${claimerName}`);
   const venmoUrl = `venmo://paycharge?txn=pay&amount=${amount}&note=${note}`;
@@ -2539,23 +2571,24 @@ function doneClaming() {
       </div>
 
       ${mineLines ? `
-        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1.5px;color:var(--ink3);margin-bottom:6px">MINE</div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">MY ITEMS</div>
         <div class="receipt-items" style="margin-bottom:12px">${mineLines}</div>` : ''}
 
-      ${splitLines ? `
-        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:1.5px;color:var(--ink3);margin-bottom:6px">SHARED</div>
-        <div class="receipt-items" style="margin-bottom:12px">${splitLines}</div>` : ''}
+      ${bdayLinesHtml ? `
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--brown);margin-bottom:6px">BIRTHDAY SHARE</div>
+        <div class="receipt-items" style="margin-bottom:12px">${bdayLinesHtml}</div>` : ''}
 
-      ${!mineLines && !splitLines ? `
+      ${!mineLines && !bdayLinesHtml ? `
         <div class="empty" style="margin-bottom:12px;padding:16px;text-align:center">
-          No items claimed yet — go back and tap Mine or Split on your items.
+          No items assigned yet.
         </div>` : ''}
 
       <hr class="divider" style="margin:0 0 10px">
       <div class="receipt-subs">
         <div class="r-sub"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
         <div class="r-sub"><span>Tax (${tax}%)</span><span>${fmt(taxAmt)}</span></div>
-        <div class="r-sub"><span>Tip (${tip}%)</span><span>${fmt(tipAmt)}</span></div>
+        ${misc > 0 ? `<div class="r-sub"><span>Misc (÷${partyCount})</span><span>${fmt(miscShare)}</span></div>` : ''}
+        <div class="r-sub"><span>${tipLabel}</span><span>${fmt(tipAmt)}</span></div>
       </div>
       <div class="receipt-total">
         <span class="rt-label">TOTAL DUE</span>
@@ -2572,7 +2605,7 @@ function doneClaming() {
           Zelle
         </a>
       </div>` : ''}
-      <p style="font-size:11px;color:var(--ink3);text-align:center;margin-top:14px;font-family:'Courier Prime',monospace">
+      <p style="font-size:11px;color:var(--ink3);text-align:center;margin-top:14px">
         Your selections have been saved ✓
       </p>
       <div style="text-align:center;margin-top:12px">
