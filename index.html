@@ -393,7 +393,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v765c7385</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v136a5f8e</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -1695,51 +1695,22 @@ function recalculate() {
   const partyCount = state.parties.length;
   const hasClaims = Object.keys(claims).length > 0;
 
-  // Build subtotals per party — claims override assignees when present
+  // Single source of truth: item.assignees
+  // (claimItem() writes back to assignees, so both Assign tab and Claim view use same data)
   const subs = {};
-  const partyItemMap = {}; // party.id → [{item, share, splitBy}]
+  const partyItemMap = {};
   state.parties.forEach(p => { subs[p.id] = 0; partyItemMap[p.id] = []; });
 
   state.items.forEach(item => {
-    const claim = claims[String(item.id)];
-
-    if (claim === '__split__') {
-      // Claimed as split — divide evenly among ALL parties
-      const share = item.price / partyCount;
-      state.parties.forEach(p => {
-        subs[p.id] += share;
-        partyItemMap[p.id].push({ item, share, splitBy: partyCount });
-      });
-    } else if (claim) {
-      // Claimed by a specific party name — find the party
-      const owner = state.parties.find(p => p.name === claim);
-      if (owner) {
-        subs[owner.id] += item.price;
-        partyItemMap[owner.id].push({ item, share: item.price, splitBy: 1 });
-      } else {
-        // Party name not found — fall back to assignees
-        const assigned = item.assignees.filter(id => state.parties.find(p => String(p.id) === String(id)));
-        if (!assigned.length) return;
-        const share = item.price / assigned.length;
-        assigned.forEach(id => {
-          const party = state.parties.find(p => String(p.id) === String(id));
-          if (!party) return;
-          subs[party.id] += share;
-          partyItemMap[party.id].push({ item, share, splitBy: assigned.length });
-        });
-      }
-    } else {
-      // No claim — use assignees from the Assign step
-      const assigned = item.assignees.filter(id => state.parties.find(p => String(p.id) === String(id)));
-      if (!assigned.length) return;
-      const share = item.price / assigned.length;
-      assigned.forEach(id => {
-        const party = state.parties.find(p => String(p.id) === String(id));
-        if (!party) return;
-        subs[party.id] += share;
-        partyItemMap[party.id].push({ item, share, splitBy: assigned.length });
-      });
-    }
+    const assigned = item.assignees.filter(id => state.parties.find(p => String(p.id) === String(id)));
+    if (!assigned.length) return;
+    const share = item.price / assigned.length;
+    assigned.forEach(id => {
+      const party = state.parties.find(p => String(p.id) === String(id));
+      if (!party) return;
+      subs[party.id] += share;
+      partyItemMap[party.id].push({ item, share, splitBy: assigned.length });
+    });
   });
 
   // ── Celebrant redistribution ──────────────────────────
@@ -1785,29 +1756,33 @@ function recalculate() {
   if (claimedLbl) claimedLbl.textContent = 'Claimed';
 
   const totalItems = state.items.length;
-  const claimedMine = Object.values(claims).filter(v => v && v !== '__split__').length;
-  const claimedSplit = Object.values(claims).filter(v => v === '__split__').length;
-  const totalClaimed = claimedMine + claimedSplit;
-  const unclaimed = totalItems - totalClaimed;
   const totalCost = state.items.reduce((a, b) => a + b.price, 0);
   const avgCost = totalItems ? totalCost / totalItems : 0;
 
-  document.getElementById('stat-items').textContent = totalItems;
-  document.getElementById('stat-split').textContent = hasClaims
-    ? claimedSplit
-    : state.items.filter(i => i.assignees.filter(id => state.parties.find(p => String(p.id) === String(id))).length > 1).length;
+  // Stats from assignees (single source of truth)
+  const assignedItems = state.items.filter(i =>
+    i.assignees.some(id => state.parties.find(p => String(p.id) === String(id)))
+  );
+  const sharedItems = state.items.filter(i =>
+    i.assignees.filter(id => state.parties.find(p => String(p.id) === String(id))).length > 1
+  );
+  const totalAssigned = assignedItems.length;
+  const unclaimed = totalItems - totalAssigned;
 
-  // Claimed tile — show X/Y with color feedback
+  document.getElementById('stat-items').textContent = totalItems;
+  document.getElementById('stat-split').textContent = sharedItems.length;
+
+  // Claimed tile
   const claimedEl = document.getElementById('stat-claimed');
   const claimedTile = document.getElementById('stat-claimed-tile');
-  claimedEl.textContent = `${totalClaimed}/${totalItems}`;
-  if (totalClaimed === 0) {
+  claimedEl.textContent = `${totalAssigned}/${totalItems}`;
+  if (totalAssigned === 0) {
     claimedEl.style.color = 'var(--ink3)';
     claimedTile.style.background = '';
   } else if (unclaimed === 0) {
     claimedEl.style.color = 'var(--green)';
     claimedTile.style.background = 'rgba(45,106,79,0.06)';
-    claimedTile.querySelector('.stat-lbl').textContent = 'All Claimed ✓';
+    claimedTile.querySelector('.stat-lbl').textContent = 'All Assigned ✓';
   } else {
     claimedEl.style.color = 'var(--brown)';
     claimedTile.style.background = '';
@@ -2113,9 +2088,18 @@ async function pollClaims() {
     });
 
     if (changes.length) {
-      // Merge new claims into state and re-render
+      // Merge new claims into state
       state.claims = newClaims;
       knownClaims = JSON.parse(JSON.stringify(newClaims));
+
+      // Merge item assignees from KV into state.items (single source of truth)
+      if (session.items && Array.isArray(session.items)) {
+        session.items.forEach(kvItem => {
+          const local = state.items.find(i => String(i.id) === String(kvItem.id));
+          if (local) local.assignees = kvItem.assignees;
+        });
+      }
+
       recalculate();
       // Also refresh assign tab if visible
       if (currentStep === 2) renderAssignList();
@@ -2200,42 +2184,50 @@ function renderClaimItems() {
   const list = document.getElementById('claim-items-list');
   list.innerHTML = '';
   const claims = claimState.claims || {};
-  const partyCount = (claimState.parties || []).length || 1;
+  const parties = claimState.parties || [];
+  const partyCount = parties.length || 1;
+  const myParty = parties.find(p => p.name === claimerName);
   let myTotal = 0;
 
   (claimState.items || []).forEach(item => {
+    // Derive display state from item.assignees (single source of truth)
+    const assignedIds = (item.assignees || []).map(String);
+    const allPartyIds = parties.map(p => String(p.id));
+    const assignedParties = parties.filter(p => assignedIds.includes(String(p.id)));
+
+    const isMe = myParty && assignedIds.includes(String(myParty.id));
+    const isSplit = assignedParties.length === partyCount && partyCount > 1;
+    const isOther = !isMe && assignedParties.length > 0;
+
+    // Fallback to claims map for display label when assignees ambiguous
     const claimedBy = claims[String(item.id)];
-    const isMe = claimedBy === claimerName;
-    const isSplit = claimedBy === '__split__';
-    const isOther = claimedBy && !isMe && !isSplit;
+    const otherNames = assignedParties.filter(p => p.name !== claimerName).map(p => p.name).join(', ');
 
-    if (isMe) myTotal += item.price;
-    if (isSplit) myTotal += item.price / partyCount;
+    if (isMe) myTotal += item.price / assignedParties.length;
 
-    const statusText = isMe
-      ? '✓ Yours'
-      : isSplit
-        ? `÷ Split equally · your share ${fmt(item.price / partyCount)}`
+    const statusText = isMe && isSplit
+      ? `÷ Split equally · your share ${fmt(item.price / partyCount)}`
+      : isMe
+        ? '✓ Yours'
         : isOther
-          ? `Claimed by ${esc(claimedBy)}`
-          : 'Unclaimed — tap to claim';
+          ? `Assigned to ${esc(otherNames || claimedBy || 'others')}`
+          : 'Unassigned — tap to claim';
 
     const div = document.createElement('div');
     div.className = 'claim-item'
-      + (isMe ? ' claimed-me' : isSplit ? ' claimed-split' : isOther ? ' claimed-other' : '');
+      + (isMe && !isSplit ? ' claimed-me' : isSplit && isMe ? ' claimed-split' : isOther && !isMe ? ' claimed-other' : '');
 
-    // Buttons only shown if not claimed by someone else
-    const btns = isOther ? '' : `
+    const btns = (isOther && !isMe) ? '' : `
       <div class="ci-claim-btns">
-        <button class="ci-claim-btn ${isMe ? 'active-mine' : ''}"
+        <button class="ci-claim-btn ${isMe && !isSplit ? 'active-mine' : ''}"
           data-item-id="${item.id}" data-mode="mine"
           onclick="claimItem(event)">
-          Mine${isMe ? ' ✓' : ''}
+          Mine${isMe && !isSplit ? ' ✓' : ''}
         </button>
-        <button class="ci-claim-btn ${isSplit ? 'active-split' : ''}"
+        <button class="ci-claim-btn ${isSplit && isMe ? 'active-split' : ''}"
           data-item-id="${item.id}" data-mode="split"
           onclick="claimItem(event)">
-          Split ÷${partyCount}${isSplit ? ' ✓' : ''}
+          Split ÷${partyCount}${isSplit && isMe ? ' ✓' : ''}
         </button>
       </div>`;
 
@@ -2260,7 +2252,7 @@ async function claimItem(e) {
   if (!claimState.claims) claimState.claims = {};
   const current = claimState.claims[itemId];
 
-  // Toggle off if already in this mode
+  // ── Update claims display map ──────────────────────
   if (mode === 'mine' && current === claimerName) {
     delete claimState.claims[itemId];
   } else if (mode === 'split' && current === '__split__') {
@@ -2271,15 +2263,40 @@ async function claimItem(e) {
     claimState.claims[itemId] = '__split__';
   }
 
+  // ── Write back to item.assignees (single source of truth) ──
+  const item = claimState.items.find(i => String(i.id) === String(itemId));
+  if (item) {
+    const allPartyIds = (claimState.parties || []).map(p => p.id);
+    const myParty = (claimState.parties || []).find(p => p.name === claimerName);
+
+    const newClaim = claimState.claims[itemId];
+    if (newClaim === '__split__') {
+      // Split: assign to all parties
+      item.assignees = allPartyIds.slice();
+    } else if (newClaim === claimerName && myParty) {
+      // Mine: add this party, keep others who already claimed it
+      // Remove any existing assignment for this party first, then add exclusively mine
+      // (if others already claimed, they stay; this party now owns their share)
+      if (!item.assignees.some(a => String(a) === String(myParty.id))) {
+        item.assignees = [...item.assignees, myParty.id];
+      }
+    } else {
+      // Unclaimed: remove this party from assignees
+      if (myParty) {
+        item.assignees = item.assignees.filter(a => String(a) !== String(myParty.id));
+      }
+    }
+  }
+
   renderClaimItems();
 
-  // Sync to KV
+  // Sync full updated items + claims to KV
   if (claimState.sessionId) {
     try {
       await fetch(PROXY_URL + '/session?id=' + encodeURIComponent(claimState.sessionId), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claims: claimState.claims }),
+        body: JSON.stringify({ claims: claimState.claims, items: claimState.items }),
       });
     } catch(e) { console.warn('Claim sync failed:', e); }
   }
