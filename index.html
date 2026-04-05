@@ -187,13 +187,12 @@ input::placeholder { color: var(--ink4); }
 @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
 
 /* ── ITEM LIST ── */
-.item-list { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.item-list { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; padding-bottom: 4px; }
 .item-row {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: flex-start; gap: 8px;
   padding: 10px 12px;
   background: var(--surface2); border-radius: var(--r);
   border: 1px solid var(--border);
-  animation: fadeIn 0.18s ease;
 }
 @keyframes fadeIn { from{opacity:0;transform:translateY(-3px)} to{opacity:1;transform:translateY(0)} }
 .item-row-name { flex: 1; font-size: 14px; color: var(--ink2); font-weight: 400; }
@@ -393,7 +392,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v072b284b</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v6a00cb32</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -1791,7 +1790,7 @@ function recalculate() {
     claimedTile.querySelector('.stat-lbl').textContent = `${unclaimed} left`;
   }
 
-  document.getElementById('stat-total').textContent = fmt(totalCost * (1 + tax/100 + effectiveTip/100) + misc);
+  document.getElementById('stat-total').textContent = '—'; // updated after party loop
   document.getElementById('stat-avg').textContent = fmt(avgCost);
   document.getElementById('results-stats').style.display = 'grid';
 
@@ -1840,7 +1839,7 @@ function recalculate() {
       </div>
       <div class="receipt-total">
         <span class="rt-label">${party.celebrant ? '🎂 TOTAL DUE' : 'TOTAL DUE'}</span>
-        <span class="rt-amount" style="color:var(--green)">${party.celebrant ? '$0.00 🎉' : fmt(total)}</span>
+        <span class="rt-amount" style="color:var(--green)">${party.celebrant && miscShare === 0 ? '🎉 $0.00' : fmt(total)}</span>
       </div>
       ${!party.celebrant ? `<div class="pay-btns">
         <a href="${venmoUrl}" class="pay-btn pay-venmo" onclick="handleVenmo(event,'${amount}')">
@@ -1856,6 +1855,7 @@ function recalculate() {
     grid.appendChild(card);
   });
   document.getElementById('grand-total').textContent = fmt(grand);
+  document.getElementById('stat-total').textContent = fmt(grand);
 }
 
 // ══════════════════════════════════════════
