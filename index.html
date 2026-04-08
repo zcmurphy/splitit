@@ -392,7 +392,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v04d59625</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v590b2436</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -2823,6 +2823,198 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   </div>
 </div>
+
+<!-- ══════════ DEBUG PANEL ══════════ -->
+<div id="debug-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:#1a1a18;color:#f0f0ec;border-radius:12px;width:100%;max-width:740px;font-family:monospace;font-size:12px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+    <div style="padding:14px 18px;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-weight:700;font-size:13px;color:#a8895c">⚙️ Debug Panel <span style="font-weight:400;color:#666;font-size:11px">Ctrl+Shift+D to toggle</span></span>
+      <div style="display:flex;gap:8px">
+        <button onclick="refreshDebug()" style="background:#2a2a28;border:1px solid #444;color:#a8895c;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px">↻ Refresh</button>
+        <button onclick="toggleDebug()" style="background:#2a2a28;border:1px solid #444;color:#888;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px">✕ Close</button>
+      </div>
+    </div>
+    <div id="debug-body" style="padding:16px 18px;display:flex;flex-direction:column;gap:16px"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DEBUG PANEL
+// ══════════════════════════════════════════
+function toggleDebug() {
+  const el = document.getElementById('debug-overlay');
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'flex';
+  if (!visible) refreshDebug();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'D') { e.preventDefault(); toggleDebug(); }
+});
+
+function dbFmt(n) { return '$' + (Math.round(n * 100) / 100).toFixed(2); }
+function dbEsc(s) { return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function refreshDebug() {
+  const body = document.getElementById('debug-body');
+  if (!body) return;
+
+  const tax      = parseFloat(document.getElementById('tax')?.value) || 0;
+  const tip      = parseFloat(document.getElementById('tip')?.value) || 0;
+  const misc     = parseFloat(document.getElementById('misc')?.value) || 0;
+  const autoGrat = parseFloat(document.getElementById('auto-gratuity')?.value) || 0;
+  const effectiveTip = autoGrat > 0 ? autoGrat : tip;
+  const partyCount = state.parties.length;
+  const celebrants = state.parties.filter(p => p.celebrant);
+  const nonCelebrants = state.parties.filter(p => !p.celebrant);
+  const miscRecipients = nonCelebrants.length > 0 ? nonCelebrants.length : partyCount;
+
+  // ── Build per-party subs ──────────────────
+  const subs = {};
+  state.parties.forEach(p => subs[p.id] = 0);
+  state.items.forEach(item => {
+    const assigned = item.assignees.filter(id => state.parties.find(p => String(p.id) === String(id)));
+    if (!assigned.length) return;
+    const share = item.price / assigned.length;
+    assigned.forEach(id => {
+      const p = state.parties.find(p => String(p.id) === String(id));
+      if (p) subs[p.id] += share;
+    });
+  });
+
+  // ── Celebrant redistribution ──────────────
+  const splitTargets = nonCelebrants.length > 0 ? nonCelebrants : state.parties;
+  celebrants.forEach(celebrant => {
+    const celebrantSub = subs[celebrant.id] || 0;
+    if (celebrantSub <= 0) return;
+    subs[celebrant.id] = 0;
+    const share = celebrantSub / splitTargets.length;
+    splitTargets.forEach(p => subs[p.id] += share);
+  });
+
+  // ── Per-party totals ──────────────────────
+  let grand = 0;
+  const partyRows = state.parties.map(p => {
+    const sub      = subs[p.id] || 0;
+    const taxAmt   = p.celebrant ? 0 : sub * tax / 100;
+    const tipAmt   = p.celebrant ? 0 : sub * effectiveTip / 100;
+    const miscShare = p.celebrant ? 0 : misc / miscRecipients;
+    const total    = sub + taxAmt + tipAmt + miscShare;
+    grand += total;
+    return { p, sub, taxAmt, tipAmt, miscShare, total };
+  });
+
+  const totalItemsCost = state.items.reduce((a,b) => a + b.price, 0);
+  const unassignedItems = state.items.filter(i => !i.assignees.some(id => state.parties.find(p => String(p.id) === String(id))));
+
+  // ── Render ────────────────────────────────
+  const section = (title, color, html) =>
+    `<div>
+      <div style="color:${color};font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">${title}</div>
+      ${html}
+    </div>`;
+
+  const row = (label, value, highlight) =>
+    `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a28">
+      <span style="color:#888">${dbEsc(label)}</span>
+      <span style="color:${highlight || '#f0f0ec'};font-weight:600">${dbEsc(String(value))}</span>
+    </div>`;
+
+  let html = '';
+
+  // State summary
+  html += section('State Summary', '#a8895c', `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      ${[
+        ['Items', state.items.length],
+        ['Parties', state.parties.length],
+        ['Claims', Object.keys(state.claims||{}).length],
+        ['Tax', tax + '%'],
+        ['Tip', tip + '%'],
+        ['Auto Grat', autoGrat + '%'],
+        ['Misc', dbFmt(misc)],
+        ['Effective Tip', effectiveTip + '%'],
+        ['Celebrants', celebrants.length],
+      ].map(([k,v]) => `<div style="background:#222;border-radius:4px;padding:6px 8px"><div style="color:#666;font-size:10px">${k}</div><div style="color:#a8895c;font-weight:700">${v}</div></div>`).join('')}
+    </div>`);
+
+  // Items breakdown
+  if (state.items.length) {
+    const itemsHtml = `
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="color:#666;font-size:10px">
+          <th style="text-align:left;padding:3px 6px">Item</th>
+          <th style="text-align:right;padding:3px 6px">Price</th>
+          <th style="text-align:left;padding:3px 6px">Assigned to</th>
+          <th style="text-align:right;padding:3px 6px">Share each</th>
+        </tr>
+        ${state.items.map(item => {
+          const assigned = item.assignees.filter(id => state.parties.find(p => String(p.id) === String(id)));
+          const names = assigned.map(id => {
+            const p = state.parties.find(p => String(p.id) === String(id));
+            return p ? p.name : '?';
+          }).join(', ');
+          const share = assigned.length ? item.price / assigned.length : 0;
+          const unassigned = !assigned.length;
+          return `<tr style="border-top:1px solid #2a2a28;${unassigned?'color:#c0392b':''}">
+            <td style="padding:3px 6px">${dbEsc(item.name)}</td>
+            <td style="text-align:right;padding:3px 6px">${dbFmt(item.price)}</td>
+            <td style="padding:3px 6px;color:${unassigned?'#c0392b':'#888'}">${unassigned ? '⚠ UNASSIGNED' : dbEsc(names)}</td>
+            <td style="text-align:right;padding:3px 6px;color:#a8895c">${assigned.length > 1 ? dbFmt(share) + ' ÷'+assigned.length : (assigned.length ? dbFmt(share) : '—')}</td>
+          </tr>`;
+        }).join('')}
+        <tr style="border-top:2px solid #444;font-weight:700">
+          <td style="padding:4px 6px">TOTAL</td>
+          <td style="text-align:right;padding:4px 6px;color:#a8895c">${dbFmt(totalItemsCost)}</td>
+          <td colspan="2" style="padding:4px 6px;color:${unassignedItems.length?'#c0392b':'#4a9a4a'}">${unassignedItems.length ? '⚠ ' + unassignedItems.length + ' unassigned' : '✓ all assigned'}</td>
+        </tr>
+      </table>`;
+    html += section('Items Breakdown', '#4a9a4a', itemsHtml);
+  }
+
+  // Per-party calculation
+  if (state.parties.length) {
+    const partyHtml = partyRows.map(({p, sub, taxAmt, tipAmt, miscShare, total}) => `
+      <div style="background:#222;border-radius:6px;padding:10px 12px;margin-bottom:6px">
+        <div style="color:${p.celebrant?'#a8895c':'#f0f0ec'};font-weight:700;margin-bottom:6px">
+          ${p.celebrant ? '🎂 ' : ''}${dbEsc(p.name)} ${p.celebrant ? '<span style="color:#666;font-size:10px">(celebrant)</span>' : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px;font-size:11px">
+          ${[
+            ['Subtotal', dbFmt(sub), '#f0f0ec'],
+            ['Tax', dbFmt(taxAmt), '#888'],
+            [autoGrat > 0 ? 'AutoGrat' : 'Tip', dbFmt(tipAmt), '#888'],
+            ['Misc', p.celebrant ? '—' : dbFmt(miscShare), '#888'],
+            ['TOTAL', dbFmt(total), p.celebrant && total < 0.01 ? '#4a9a4a' : '#a8895c'],
+          ].map(([k,v,c]) => `<div style="background:#1a1a18;border-radius:3px;padding:4px 6px"><div style="color:#555;font-size:10px">${k}</div><div style="color:${c};font-weight:700">${v}</div></div>`).join('')}
+        </div>
+      </div>`).join('');
+    html += section('Per-Party Calculation', '#3a8a9a', partyHtml);
+  }
+
+  // Reconciliation
+  const expectedGrand = totalItemsCost * (1 + tax/100 + effectiveTip/100) + misc;
+  const diff = Math.abs(grand - expectedGrand);
+  const match = diff < 0.02;
+  html += section('Reconciliation', match ? '#4a9a4a' : '#c0392b', `
+    <div style="background:#222;border-radius:6px;padding:10px 12px">
+      ${row('Items Subtotal', dbFmt(totalItemsCost))}
+      ${row('Tax (' + tax + '%)', dbFmt(totalItemsCost * tax / 100))}
+      ${row((autoGrat > 0 ? 'Auto Gratuity' : 'Tip') + ' (' + effectiveTip + '%)', dbFmt(totalItemsCost * effectiveTip / 100))}
+      ${row('Misc', dbFmt(misc))}
+      ${row('Expected Grand Total', dbFmt(expectedGrand), '#a8895c')}
+      ${row('Actual Grand (sum of parties)', dbFmt(grand), '#a8895c')}
+      ${row('Difference', dbFmt(diff), match ? '#4a9a4a' : '#c0392b')}
+      <div style="margin-top:8px;padding:6px 10px;border-radius:4px;background:${match?'rgba(74,154,74,0.15)':'rgba(192,57,43,0.15)'};color:${match?'#4a9a4a':'#c0392b'};font-weight:700;text-align:center">
+        ${match ? '✓ Totals reconcile correctly' : '⚠ MISMATCH — check calculation'}
+        ${unassignedItems.length ? '<br><span style="font-weight:400;font-size:10px">Note: ' + unassignedItems.length + ' unassigned item(s) excluded from party totals</span>' : ''}
+      </div>
+    </div>`);
+
+  body.innerHTML = html;
+}
+</script>
 
 </body>
 </html>
