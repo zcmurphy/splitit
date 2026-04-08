@@ -188,6 +188,7 @@ input::placeholder { color: var(--ink4); }
 
 /* ── ITEM LIST ── */
 .item-list { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; padding-bottom: 4px; }
+.item-list .item-row:last-child { margin-bottom: 4px; }
 .item-row {
   display: flex; align-items: flex-start; gap: 8px;
   padding: 10px 12px;
@@ -392,7 +393,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v590b2436</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">vf7f5c07c</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -659,14 +660,14 @@ input::placeholder { color: var(--ink4); }
     </div>
 
     <!-- Assign items -->
-    <div class="card">
+    <div class="card" style="overflow:visible">
       <div class="card-head">
         <span class="card-title">🎯 Assign Items to Parties</span>
         <span class="tag tag-amber">Tap names to toggle</span>
       </div>
-      <div class="card-body">
+      <div class="card-body" style="padding-bottom:24px">
         <p style="font-size:13px;color:var(--ink2);margin-bottom:14px">For each item, tap which parties share it. Shared items split evenly among selected parties.</p>
-        <div class="item-list" id="assign-list"></div>
+        <div class="item-list" id="assign-list" style="padding-bottom:8px"></div>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-top:4px">
