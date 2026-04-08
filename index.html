@@ -392,7 +392,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v8462fac3</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">vfb5a4909</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -633,6 +633,31 @@ input::placeholder { color: var(--ink4); }
 
       </div>
     </div>
+    <!-- Quick Split -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">⚡ Quick Split</span>
+        <span class="tag tag-amber">One tap</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--ink2);margin-bottom:16px">Split the entire bill evenly across all parties — no item-by-item assignment needed.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px" id="quick-split-preview"></div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-green" onclick="quickSplitAll()" style="flex:1">
+            ⚡ Split Evenly Across All Parties
+          </button>
+          <button class="btn btn-outline" onclick="quickSplitClear()" style="color:var(--ink3)">
+            ✕ Clear All
+          </button>
+        </div>
+        <div id="quick-split-note" style="display:none;margin-top:10px;font-size:11px;color:var(--green);font-weight:600">
+          ✓ All items assigned equally
+        </div>
+      </div>
+    </div>
+
     <!-- Assign items -->
     <div class="card">
       <div class="card-head">
@@ -978,7 +1003,7 @@ function goStep(n) {
   document.querySelectorAll('.step').forEach((el,i) => el.classList.toggle('active', i===n));
   document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', i===n));
   currentStep = n;
-  if (n === 2) { renderAssignList(); updateTaxTipCalc(); }
+  if (n === 2) { renderAssignList(); updateTaxTipCalc(); updateQuickSplitPreview(); }
   if (n === 3) {
     const input = document.getElementById('session-name-input');
     if (input && state.sessionName) input.value = state.sessionName;
@@ -1496,8 +1521,59 @@ function toggleAssign(el) {
 }
 
 // ══════════════════════════════════════════
-// TAX / TIP
+// QUICK SPLIT
 // ══════════════════════════════════════════
+function quickSplitAll() {
+  if (!state.parties.length) {
+    alert('Add parties first before splitting.');
+    return;
+  }
+  if (!state.items.length) {
+    alert('Add items first before splitting.');
+    return;
+  }
+  // Assign every item to every party
+  state.items.forEach(item => {
+    item.assignees = state.parties.map(p => p.id);
+  });
+  renderAssignList();
+  updateQuickSplitPreview();
+  document.getElementById('quick-split-note').style.display = 'block';
+}
+
+function quickSplitClear() {
+  state.items.forEach(item => { item.assignees = []; });
+  renderAssignList();
+  updateQuickSplitPreview();
+  document.getElementById('quick-split-note').style.display = 'none';
+}
+
+function updateQuickSplitPreview() {
+  const preview = document.getElementById('quick-split-preview');
+  if (!preview) return;
+  if (!state.parties.length || !state.items.length) {
+    preview.innerHTML = '';
+    return;
+  }
+  const totalCost = state.items.reduce((a, b) => a + b.price, 0);
+  const tax = parseFloat(document.getElementById('tax').value) || 0;
+  const tip = parseFloat(document.getElementById('tip').value) || 0;
+  const autoGrat = parseFloat(document.getElementById('auto-gratuity').value) || 0;
+  const misc = parseFloat(document.getElementById('misc').value) || 0;
+  const effectiveTip = autoGrat > 0 ? autoGrat : tip;
+  const grandTotal = totalCost * (1 + tax / 100 + effectiveTip / 100) + misc;
+  const perParty = grandTotal / state.parties.length;
+
+  preview.innerHTML = state.parties.map(p => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="chip ${p.color}" style="padding:2px 10px;font-size:11px">${p.celebrant ? '🎂 ' : ''}${esc(p.name)}</span>
+      </div>
+      <span style="font-size:15px;font-weight:700;color:var(--brown);font-variant-numeric:tabular-nums">${p.celebrant ? '🎉 $0.00' : fmt(perParty)}</span>
+    </div>`).join('');
+}
+
+
 function setTip(v) {
   document.getElementById('tip').value = v;
   updateTaxTipCalc();
@@ -1582,6 +1658,7 @@ function updateTaxTipCalc() {
   document.getElementById('calc-tip-amt').textContent     = fmt(tipAmt);
   document.getElementById('calc-tip-line').textContent    = fmt(tipAmt);
   document.getElementById('calc-total').textContent       = fmt(total);
+  updateQuickSplitPreview();
 
   // Misc row
   const miscRow = document.getElementById('calc-misc-row');
