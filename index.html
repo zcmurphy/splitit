@@ -392,7 +392,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v6a00cb32</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v8462fac3</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -1413,13 +1413,14 @@ function renderAssignList() {
   }
   const partyCount = state.parties.length || 1;
   list.innerHTML = '';
+
   state.items.forEach(item => {
-    // Derive badge from assignees (single source of truth)
     const assignedIds = (item.assignees || []).map(String);
     const assignedParties = state.parties.filter(p => assignedIds.includes(String(p.id)));
     const isSplit = assignedParties.length === partyCount && partyCount > 1;
     const isMine = assignedParties.length === 1;
 
+    // Badge
     let claimBadge = '';
     if (isSplit) {
       claimBadge = `<span class="claim-badge claim-badge-split">÷ Split ×${partyCount}</span>`;
@@ -1429,38 +1430,65 @@ function renderAssignList() {
       claimBadge = `<span class="claim-badge claim-badge-split">÷ ${assignedParties.length} parties</span>`;
     }
 
+    // Row
     const row = document.createElement('div');
     row.className = 'item-row' + (isMine ? ' claimed-row' : isSplit ? ' split-row' : '');
 
-    const chipsHtml = state.parties.length
-      ? state.parties.map(p => {
-          const on = assignedIds.includes(String(p.id)) ? 'on' : '';
-          return `<span class="ac ${p.color} ${on}" data-item-id="${item.id}" data-party-id="${p.id}" onclick="toggleAssign(this)">${esc(p.name)}</span>`;
-        }).join('')
-      : '<span style="font-size:11px;color:var(--ink3)">Add parties first</span>';
+    // Left section
+    const left = document.createElement('div');
+    left.style.cssText = 'flex:1;min-width:0';
 
-    row.innerHTML = `
-      <div style="flex:1;min-width:0">
-        <div class="item-row-name">${esc(item.name)}${claimBadge ? '&nbsp;&nbsp;' + claimBadge : ''}</div>
-        <div class="assign-chips" style="margin-top:6px">${chipsHtml}</div>
-      </div>
-      <div class="item-row-price" style="align-self:flex-start;padding-top:2px">${fmt(item.price)}</div>
-    `;
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'item-row-name';
+    nameDiv.innerHTML = esc(item.name) + (claimBadge ? '&nbsp;&nbsp;' + claimBadge : '');
+    left.appendChild(nameDiv);
+
+    // Chips — built via DOM to avoid innerHTML quote issues
+    const chipsDiv = document.createElement('div');
+    chipsDiv.className = 'assign-chips';
+    chipsDiv.style.marginTop = '6px';
+
+    if (state.parties.length) {
+      state.parties.forEach(p => {
+        const chip = document.createElement('span');
+        chip.className = 'ac ' + p.color + (assignedIds.includes(String(p.id)) ? ' on' : '');
+        chip.textContent = p.name;
+        // Store IDs directly on element — no attribute parsing issues
+        chip._itemId = String(item.id);
+        chip._partyId = String(p.id);
+        chip.addEventListener('click', function() {
+          toggleAssign(this);
+        });
+        chipsDiv.appendChild(chip);
+      });
+    } else {
+      chipsDiv.innerHTML = '<span style="font-size:11px;color:var(--ink3)">Add parties first</span>';
+    }
+
+    left.appendChild(chipsDiv);
+    row.appendChild(left);
+
+    // Price
+    const priceDiv = document.createElement('div');
+    priceDiv.className = 'item-row-price';
+    priceDiv.style.cssText = 'align-self:flex-start;padding-top:2px';
+    priceDiv.textContent = fmt(item.price);
+    row.appendChild(priceDiv);
+
     list.appendChild(row);
   });
 }
 
 function toggleAssign(el) {
-  const itemId = el.dataset.itemId;
-  const partyId = el.dataset.partyId;
-  // Match by string comparison to handle float IDs safely
+  // Support both _itemId property (DOM method) and dataset attribute (legacy)
+  const itemId = el._itemId || el.dataset.itemId;
+  const partyId = el._partyId || el.dataset.partyId;
   const item = state.items.find(i => String(i.id) === String(itemId));
   if (!item) return;
   const idx = item.assignees.findIndex(a => String(a) === String(partyId));
   if (idx !== -1) {
     item.assignees.splice(idx, 1);
   } else {
-    // Store as same type as existing assignees (preserve original party id)
     const party = state.parties.find(p => String(p.id) === String(partyId));
     if (party) item.assignees.push(party.id);
   }
