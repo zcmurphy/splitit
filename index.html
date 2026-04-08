@@ -392,7 +392,7 @@ input::placeholder { color: var(--ink4); }
             <tspan fill="#1a1a18">Split</tspan><tspan fill="#8b6f47" font-weight="300">/</tspan><tspan fill="#8b6f47">It</tspan>
           </text>
         </svg>
-        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">vfb5a4909</span></div>
+        <div class="header-tag">Split smarter · Pay faster &nbsp;·&nbsp; <span style="font-family:monospace;letter-spacing:0.5px;color:var(--ink4)" title="Build hash">v04d59625</span></div>
       </div>
     </div>
     <div id="session-badge" style="display:none">
@@ -1562,7 +1562,11 @@ function updateQuickSplitPreview() {
   const misc = parseFloat(document.getElementById('misc').value) || 0;
   const effectiveTip = autoGrat > 0 ? autoGrat : tip;
   const grandTotal = totalCost * (1 + tax / 100 + effectiveTip / 100) + misc;
-  const perParty = grandTotal / state.parties.length;
+  const celebrantParties = state.parties.filter(p => p.celebrant);
+  const payingParties = state.parties.filter(p => !p.celebrant);
+  const payingCount = payingParties.length || state.parties.length;
+  // Celebrants pay $0, misc splits among paying parties only
+  const perParty = (totalCost * (1 + tax / 100 + effectiveTip / 100) + misc) / payingCount;
 
   preview.innerHTML = state.parties.map(p => `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -1901,9 +1905,10 @@ function recalculate() {
 
   state.parties.forEach((party, idx) => {
     const sub         = subs[party.id] || 0;
-    const taxAmt      = sub * tax / 100;
-    const tipAmt      = sub * effectiveTip / 100;
-    const miscShare   = partyCount > 0 ? misc / partyCount : 0;
+    // Celebrants owe nothing — their items + misc are covered by the group
+    const taxAmt      = party.celebrant ? 0 : sub * tax / 100;
+    const tipAmt      = party.celebrant ? 0 : sub * effectiveTip / 100;
+    const miscShare   = party.celebrant ? 0 : (nonCelebrants.length > 0 ? misc / nonCelebrants.length : misc / partyCount);
     const total       = sub + taxAmt + tipAmt + miscShare;
     grand += total;
 
@@ -1917,8 +1922,8 @@ function recalculate() {
       </div>`).join('');
 
     const tipLabel = autoGrat > 0 ? `Auto Gratuity (${autoGrat}%)` : `Tip (${tip}%)`;
-    const miscLine = misc > 0
-      ? `<div class="r-sub"><span>${state.meta && state.meta.misc_label ? esc(state.meta.misc_label) : 'Misc'} (÷${partyCount})</span><span>${fmt(miscShare)}</span></div>`
+    const miscLine = misc > 0 && !party.celebrant
+      ? `<div class="r-sub"><span>${state.meta && state.meta.misc_label ? esc(state.meta.misc_label) : 'Misc'} (÷${nonCelebrants.length > 0 ? nonCelebrants.length : partyCount})</span><span>${fmt(miscShare)}</span></div>`
       : '';
 
     const card = document.createElement('div');
@@ -2638,7 +2643,9 @@ function doneClaming() {
     });
   }
 
-  const miscShare = partyCount > 0 ? misc / partyCount : 0;
+  const isCelebrant = myParty && myParty.celebrant;
+  const miscRecipients = nonCelebrants.length > 0 ? nonCelebrants.length : partyCount;
+  const miscShare = isCelebrant ? 0 : (miscRecipients > 0 ? misc / miscRecipients : 0);
   subtotal += miscShare;
   const taxAmt = subtotal * tax / 100;
   const tipAmt = subtotal * effectiveTip / 100;
